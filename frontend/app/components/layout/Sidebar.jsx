@@ -10,7 +10,7 @@ const Sidebar = () => {
     const router = useRouter();
     const user = getUser();
     
-    console.log("the user is ", user);
+    // console.log("the user is ", user);
 
     if (!user) return null;
 
@@ -29,6 +29,7 @@ const Sidebar = () => {
             { name: 'Dashboard', href: `/${user.role}/dashboard`, icon: '📊' },
             { name: 'Properties', href: `/${user.role}/properties`, icon: '🏠' },
             { name: 'Bookings', href: `/${user.role}/bookings`, icon: '📅' },
+            { name: 'Find Agents', href: `/${user.role}/findAgent`, icon: '📅' },
             { name: 'Profile', href: `/${user.role}/profile`, icon: '👤' },
         ],
         user: [
