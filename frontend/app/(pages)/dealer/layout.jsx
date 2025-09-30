@@ -41,7 +41,7 @@ export default function LayoutWrapper({ children }) {
             </svg>
           </button>
 
-          <div className="p-6 pt-20 lg:pt-6 text-text-primary">
+          <div className="text-text-primary">
             {children}
           </div>
         </main>
