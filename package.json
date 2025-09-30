@@ -1,13 +1,17 @@
 {
    "//": "To install package: npm install pakage-name -w folder-name",
-   "name": "new-folder-monorepo",
+   "name": "realestate-monorepo",
    "private": true,
    "workspaces": [
-      "backend",
-      "frontend"
+      "b",
+      "f"
    ],
    "scripts": {
-     "dev": "concurrently \"npm:dev --workspace backend\" \"npm:dev --workspace frontend\" -n \"B,F\" -c \"yellow,cyan\""
+      "dev": "concurrently \"npm run dev --workspace=b\" \"npm run dev --workspace=f\" -n \"B,F\" -c \"yellow,cyan\"",
+      "build": "npm run build --workspace=f",
+      "start": "npm run start --workspace=b",
+      "install:all": "npm install",
+      "clean": "rm -rf node_modules && npm run clean --workspaces"
    },
    "devDependencies": {
       "concurrently": "^9.2.0"
