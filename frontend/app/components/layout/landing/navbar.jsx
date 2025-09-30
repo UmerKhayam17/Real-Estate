@@ -21,7 +21,7 @@ const Navbar = () => {
                {/* Right side - Login button */}
                <div className="flex items-center">
                   <Link
-                     href="/login"
+                     href="/auth/login"
                      className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 shadow-soft hover:shadow-medium"
                   >
                      Login
