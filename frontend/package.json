@@ -1,12 +1,13 @@
 {
-  "name": "real-estate-frontend",
+  "name": "frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint",
+    "clean": "rm -rf node_modules .next"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.2",

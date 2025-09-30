@@ -59,7 +59,7 @@ exports.register = async (req, res, next) => {
       ...emailTemplates.otp(name, otp),
     });
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: "OTP sent to email. Please verify to activate account.",
       role: role
     });
@@ -91,8 +91,8 @@ exports.verifyOtp = async (req, res, next) => {
     const token = jwtSign({ id: user._id, role: user.role });
 
     const response = {
-      message: user.role === "dealer" 
-        ? "Account verified successfully. Please complete your dealer profile to get started." 
+      message: user.role === "dealer"
+        ? "Account verified successfully. Please complete your dealer profile to get started."
         : "Account verified successfully",
       user: {
         id: user._id,
@@ -120,7 +120,7 @@ exports.completeDealerProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const dealerData = req.body;
-console.log(dealerData);
+    console.log(dealerData);
     // Check if user is actually a dealer
     const user = await User.findById(userId);
     if (!user || user.role !== "dealer") {
@@ -167,17 +167,17 @@ console.log(dealerData);
 exports.checkDealerStatus = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    
+
     const user = await User.findById(userId);
     if (!user || user.role !== "dealer") {
       return res.status(400).json({ message: "User is not a dealer" });
     }
-    
+
     const dealerProfile = await Dealer.findOne({ userId })
       .populate('userId', 'name email phone');
-    
+
     if (!dealerProfile) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         message: "Dealer profile not completed",
         hasDealerProfile: false,
         status: "profile_incomplete"
@@ -200,9 +200,9 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    
+
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
-    
+
     if (!user.verified) {
       return res.status(400).json({ message: 'Please complete registration first' });
     }
@@ -231,16 +231,16 @@ exports.login = async (req, res, next) => {
     }
 
     const token = jwtSign({ id: user._id, role: user.role });
-    
+
     const response = {
-      user: { 
-        id: user._id, 
+      user: {
+        id: user._id,
         userId: user.userId,
-        name: user.name, 
-        email: user.email, 
-        role: user.role 
-      }, 
-      token 
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
     };
 
     // Add dealer status if applicable
@@ -297,9 +297,9 @@ exports.approveDealer = async (req, res, next) => {
         ...emailTemplates.dealerApproved(dealerProfile.userId.name, dealerProfile.businessName),
       });
 
-      res.status(200).json({ 
+      res.status(200).json({
         message: "Dealer approved successfully",
-        dealerProfile 
+        dealerProfile
       });
 
     } else if (action === 'reject') {
@@ -307,15 +307,15 @@ exports.approveDealer = async (req, res, next) => {
       await sendMail({
         to: dealerProfile.userId.email,
         ...emailTemplates.dealerRejected(
-          dealerProfile.userId.name, 
-          dealerProfile.businessName, 
+          dealerProfile.userId.name,
+          dealerProfile.businessName,
           reason
         ),
       });
 
-      res.status(200).json({ 
+      res.status(200).json({
         message: "Dealer rejected successfully",
-        reason 
+        reason
       });
     } else {
       res.status(400).json({ message: "Invalid action" });
@@ -330,7 +330,7 @@ exports.notifyAdminNewDealer = async (user, dealerProfile) => {
   try {
     // Find admin users
     const admins = await User.find({ role: "admin" });
-    
+
     for (const admin of admins) {
       await sendMail({
         to: admin.email,
@@ -351,10 +351,10 @@ exports.notifyAdminNewDealer = async (user, dealerProfile) => {
 exports.me = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select('-passwordHash');
-    
+
     let dealerProfile = null;
     let dealerStatus = null;
-    
+
     if (user.role === "dealer") {
       dealerProfile = await Dealer.findOne({ userId: user._id });
       dealerStatus = dealerProfile ? {
@@ -367,7 +367,7 @@ exports.me = async (req, res, next) => {
       };
     }
 
-    res.json({ 
+    res.json({
       user,
       dealerProfile: dealerStatus
     });
@@ -392,11 +392,11 @@ exports.getAllUsers = async (req, res, next) => {
 
     // Build filter based on query parameters
     const filter = {};
-    
+
     if (req.query.role) {
       filter.role = req.query.role; // Filter by role: admin, dealer, user
     }
-    
+
     if (req.query.verified !== undefined) {
       filter.verified = req.query.verified === 'true';
     }
@@ -435,7 +435,7 @@ exports.getAllUsers = async (req, res, next) => {
       verified: user.verified,
       dealerProfileCompleted: user.dealerProfileCompleted,
       createdAt: user.createdAt,
-      
+
       // Dealer specific info (if user is dealer)
       dealerProfile: user.dealerProfile ? {
         businessName: user.dealerProfile.businessName,

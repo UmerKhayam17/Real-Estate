@@ -1,13 +1,11 @@
 import React from 'react'
-import RegisterPage from './auth/register/page'
-
-
-
+import DashboardPage from './(pages)/(landing)/dashboard/page'
+import Layout from "./(pages)/(landing)/layout"
 const page = () => {
   return (
-    <div>
-    <RegisterPage />
-    </div>
+    <>
+     <Layout> <DashboardPage/></Layout>
+    </>
   )
 }
 
