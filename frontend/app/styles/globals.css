@@ -1,14 +1,5 @@
 @import "tailwindcss";
 
-@layer base {
-  html {
-    font-family: var(--font-inter), system-ui, sans-serif;
-  }
-
-  .font-heading {
-    font-family: var(--font-poppins), system-ui, sans-serif;
-  }
-}
 
 @theme {
   /* Primary Colors - Navy Blue (Professional & Trustworthy) */
@@ -96,8 +87,15 @@
 }
 
 @layer base {
+  html {
+    font-family: var(--font-inter), system-ui, sans-serif;
+  }
+
+  .font-heading {
+    font-family: var(--font-poppins), system-ui, sans-serif;
+  }
+
   body {
-    @apply bg-background text-text-primary;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
@@ -117,6 +115,18 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-neutral-400);
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
+
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 }
 
@@ -187,20 +197,5 @@
     opacity: 1;
     transform: translateY(0);
     transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-}
-
-/* Focus states for accessibility */
-@layer base {
-  *:focus-visible {
-    outline: 2px solid var(--color-primary-500);
-    outline-offset: 2px;
-  }
-
-  button:focus-visible,
-  a:focus-visible {
-    outline: 2px solid var(--color-primary-500);
-    outline-offset: 2px;
-    border-radius: 4px;
   }
 }

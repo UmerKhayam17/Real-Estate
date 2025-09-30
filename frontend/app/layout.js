@@ -1,6 +1,7 @@
 // app/layout.js
 import { Inter, Poppins } from 'next/font/google'
-import './globals.css'
+import './styles/globals.css'
+// import './styles/style.css'
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 
@@ -26,11 +27,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
-      {/* Flaticon CDN for animated icons */}
-      <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-regular-straight/css/uicons-regular-straight.css" />
-      <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-solid-rounded/css/uicons-solid-rounded.css" />
-      <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-thin-straight/css/uicons-thin-straight.css" />
-      <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-animated/css/uicons-animated.css" />
+       {/* Flaticon CDN for animated icons */}
+        <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-regular-straight/css/uicons-regular-straight.css" />
+        <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-solid-rounded/css/uicons-solid-rounded.css" />
+        <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-thin-straight/css/uicons-thin-straight.css" />
+        <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-animated/css/uicons-animated.css" />
       <body className="font-sans antialiased">
         <QueryClientProvider client={queryClient}>
           {children}
