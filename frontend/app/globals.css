@@ -168,6 +168,26 @@
   .shadow-strong {
     box-shadow: 0 10px 40px -10px oklch(0% 0 0 / 0.2);
   }
+
+  .hover-lift {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Smooth transitions for dropdowns */
+  .dropdown-enter {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  .dropdown-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
 }
 
 /* Focus states for accessibility */

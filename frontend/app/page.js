@@ -1,14 +1,5 @@
-import React from 'react'
-import RegisterPage from './auth/register/page'
+import { redirect } from 'next/navigation';
 
-
-
-const page = () => {
-  return (
-    <div>
-    <RegisterPage />
-    </div>
-  )
+export default function HomePage() {
+  redirect('/(pages)/(landing)/dashboard');
 }
-
-export default page
