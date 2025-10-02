@@ -198,6 +198,7 @@ exports.checkDealerStatus = async (req, res, next) => {
 // ----------------- LOGIN -----------------
 exports.login = async (req, res, next) => {
   try {
+    console.log("here")
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
