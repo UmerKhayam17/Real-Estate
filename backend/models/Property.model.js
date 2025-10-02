@@ -1,4 +1,3 @@
-// models/Property.model.js
 const mongoose = require('mongoose');
 
 const propertySchema = new mongoose.Schema({
@@ -21,9 +20,15 @@ const propertySchema = new mongoose.Schema({
   },
   location: {
     type: { type: String, enum: ['Point'], default: 'Point' },
-    coordinates: { type: [Number], default: [0, 0] } // [lng, lat]
+    coordinates: { type: [Number], default: [0, 0] }
   },
-  images: { type: [String], default: [] },
+  media: [{
+    url: { type: String, required: true },
+    type: { type: String, enum: ['image', 'video'], required: true },
+    isMain: { type: Boolean, default: false },
+    caption: { type: String, default: '' },
+    uploadedAt: { type: Date, default: Date.now }
+  }],
   features: { type: [String], default: [] },
   agent: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   views: { type: Number, default: 0 },
@@ -31,9 +36,15 @@ const propertySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// text index
+propertySchema.pre('save', function(next) {
+  const mainMedia = this.media.filter(m => m.isMain);
+  if (mainMedia.length > 1) {
+    return next(new Error('Only one media can be set as main'));
+  }
+  next();
+});
+
 propertySchema.index({ title: 'text', description: 'text', 'address.city': 'text' });
-// geo index
 propertySchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('Property', propertySchema);
