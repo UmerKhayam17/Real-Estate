@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "test": "jest",
-    "clean": "rm -rf node_modules"
+    "clean": "rd /s /q node_modules 2>nul || echo \"Backend cleaned\""
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
