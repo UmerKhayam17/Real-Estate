@@ -98,18 +98,29 @@ const FileUpload = ({
 
    // Get file icon based on type
    const getFileIcon = (fileType) => {
-      if (fileType.startsWith('image/')) return <FiImage className="w-5 h-5" />;
-      if (fileType.startsWith('video/')) return <FiVideo className="w-5 h-5" />;
+      if (fileType?.startsWith('image/')) return <FiImage className="w-5 h-5" />;
+      if (fileType?.startsWith('video/')) return <FiVideo className="w-5 h-5" />;
       return <FiFile className="w-5 h-5" />;
    };
 
-   // Format file size
+   // Format file size - FIXED: Handle undefined/NaN values
    const formatFileSize = (bytes) => {
-      if (bytes === 0) return '0 Bytes';
+      if (!bytes || bytes === 0 || isNaN(bytes)) return '0 Bytes';
       const k = 1024;
       const sizes = ['Bytes', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+   };
+
+   // Get safe file properties
+   const getSafeFileProperties = (file) => {
+      return {
+         name: file.name || 'Unknown file',
+         type: file.type || 'application/octet-stream',
+         size: file.size || 0,
+         preview: file.preview || '',
+         file: file.file || file
+      };
    };
 
    return (
@@ -169,50 +180,57 @@ const FileUpload = ({
                </h4>
 
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {value.map((file, index) => (
-                     <div key={index} className="relative border border-gray-200 rounded-lg p-3 group hover:border-gray-300 transition-colors">
-                        {/* Remove Button */}
-                        <button
-                           type="button"
-                           onClick={(e) => {
-                              e.stopPropagation();
-                              removeFile(index);
-                           }}
-                           className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                        >
-                           <FiX className="w-3 h-3" />
-                        </button>
+                  {value.map((file, index) => {
+                     const safeFile = getSafeFileProperties(file);
 
-                        {/* File Preview - handle both preview URLs and File objects */}
-                        {file.type?.startsWith('image/') || (file.preview && file.preview.match(/\.(jpg|jpeg|png|gif|webp)$/i)) ? (
-                           <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
-                              <img
-                                 src={file.preview || URL.createObjectURL(file.file)}
-                                 alt={file.name}
-                                 className="w-full h-full object-cover"
-                              />
-                           </div>
-                        ) : file.type?.startsWith('video/') || (file.preview && file.preview.match(/\.(mp4|mov|avi)$/i)) ? (
-                           <div className="aspect-video bg-gray-800 rounded-md flex items-center justify-center">
-                              <FiVideo className="w-8 h-8 text-white" />
-                           </div>
-                        ) : (
-                           <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center">
-                              {getFileIcon(file.type)}
-                           </div>
-                        )}
+                     return (
+                        <div key={index} className="relative border border-gray-200 rounded-lg p-3 group hover:border-gray-300 transition-colors">
+                           {/* Remove Button */}
+                           <button
+                              type="button"
+                              onClick={(e) => {
+                                 e.stopPropagation();
+                                 removeFile(index);
+                              }}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                           >
+                              <FiX className="w-3 h-3" />
+                           </button>
 
-                        {/* File Info */}
-                        <div className="mt-2 space-y-1">
-                           <p className="text-xs font-medium text-gray-900 truncate">
-                              {file.name}
-                           </p>
-                           <p className="text-xs text-gray-500">
-                              {formatFileSize(file.size)}
-                           </p>
+                           {/* File Preview */}
+                           {safeFile.type?.startsWith('image/') ? (
+                              <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
+                                 <img
+                                    src={safeFile.preview}
+                                    alt={safeFile.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                       e.target.src = '/api/placeholder/200/200';
+                                    }}
+                                 />
+                              </div>
+                           ) : safeFile.type?.startsWith('video/') ? (
+                              <div className="aspect-video bg-gray-800 rounded-md flex items-center justify-center">
+                                 <FiVideo className="w-8 h-8 text-white" />
+                              </div>
+                           ) : (
+                              <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center">
+                                 {getFileIcon(safeFile.type)}
+                              </div>
+                           )}
+
+                           {/* File Info */}
+                           <div className="mt-2 space-y-1">
+                              <p className="text-xs font-medium text-gray-900 truncate">
+                                 {safeFile.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                 {formatFileSize(safeFile.size)}
+                              </p>
+                           </div>
                         </div>
-                     </div>
-                  ))}
+                     );
+                  })}
                </div>
 
                {/* Clear All Button */}

@@ -231,23 +231,31 @@ export const AddressSection = ({ formData, handleInputChange }) => (
    </div>
 );
 
+// components/property/PropertyFormSections.js - MediaUploadSection only
 // Media Upload Section
 export const MediaUploadSection = ({ formData, handleArrayChange }) => {
    const handleFilesChange = (newFiles) => {
+      console.log('📁 New files received:', newFiles);
+
       // Convert File objects to the format needed for form data
       const mediaItems = newFiles.map(fileItem => ({
          file: fileItem.file, // Actual File object for upload
          preview: fileItem.preview, // Object URL for preview
+         name: fileItem.name,
          type: fileItem.type?.startsWith('image/') ? 'image' : 'video',
+         size: fileItem.size,
          isMain: false, // Will be set based on selection
          caption: ''
       }));
 
+      console.log('📦 Processed media items:', mediaItems);
       handleArrayChange('media', mediaItems);
    };
 
    // Safely handle formData.media - ensure it's always an array
    const mediaValue = Array.isArray(formData.media) ? formData.media : [];
+
+   console.log('🖼️ Current media value:', mediaValue);
 
    return (
       <div className="space-y-6">
@@ -255,12 +263,7 @@ export const MediaUploadSection = ({ formData, handleArrayChange }) => {
 
          <FileUpload
             label="Property Images & Videos"
-            value={mediaValue.map(mediaItem => ({
-               preview: mediaItem.preview || mediaItem.url || '',
-               name: mediaItem.name || 'file',
-               type: mediaItem.type || 'image/jpeg',
-               file: mediaItem.file // Keep the file reference for upload
-            }))}
+            value={mediaValue}
             onChange={handleFilesChange}
             helperText="Upload images and videos of your property. First image will be used as cover."
             maxSize={20 * 1024 * 1024} // 20MB
