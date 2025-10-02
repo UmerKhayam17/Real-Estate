@@ -2,17 +2,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  FiMapPin, 
-  FiHome, 
-  FiEye, 
-  FiCheckCircle, 
+import {
+  FiMapPin,
+  FiHome,
+  FiEye,
+  FiCheckCircle,
   FiClock,
   FiDollarSign
 } from 'react-icons/fi';
-import { 
-  MdBathtub, 
-  MdBed, 
+import {
+  MdBathtub,
+  MdBed,
   MdOutlineSquareFoot,
   MdSell,
   MdHouse
@@ -20,7 +20,11 @@ import {
 
 const PropertyCard = ({ property }) => {
   const [imageError, setImageError] = useState(false);
-  
+
+  // Get main image from media array
+  const mainMedia = property.media?.find(media => media.isMain) || property.media?.[0];
+  const imageUrl = mainMedia?.url || '/api/placeholder/400/300';
+
   // Format price with commas
   const formatPrice = (price, currency) => {
     if (currency === 'PKR') {
@@ -66,24 +70,24 @@ const PropertyCard = ({ property }) => {
       {/* Image Section */}
       <div className="relative overflow-hidden">
         <img
-          src={imageError ? '/api/placeholder/400/300' : property.images[0]}
+          src={imageError ? '/api/placeholder/400/300' : imageUrl}
           alt={property.title}
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
           onError={() => setImageError(true)}
         />
-        
-        {/* Image Count Badge */}
-        {property.images.length > 1 && (
+
+        {/* Media Count Badge */}
+        {property.media && property.media.length > 1 && (
           <div className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
-            +{property.images.length - 1}
+            +{property.media.length - 1}
           </div>
         )}
-        
+
         {/* Status Badge */}
         <div className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
           {statusInfo.text}
         </div>
-        
+
         {/* Sale/Rent Badge */}
         <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-gray-700 flex items-center gap-1">
           {property.saleOrRent === 'sale' ? <MdSell className="w-3 h-3" /> : <FiDollarSign className="w-3 h-3" />}
@@ -115,7 +119,7 @@ const PropertyCard = ({ property }) => {
         <div className="flex items-center text-gray-500 text-sm mb-4">
           <FiMapPin className="w-4 h-4 mr-1" />
           <span className="line-clamp-1">
-            {property.address.street}, {property.address.city}
+            {property.address?.street}, {property.address?.city}
           </span>
         </div>
 
@@ -129,7 +133,7 @@ const PropertyCard = ({ property }) => {
                 <span>{property.bedrooms} bed</span>
               </div>
             )}
-            
+
             {/* Bathrooms */}
             {property.bathrooms > 0 && (
               <div className="flex items-center gap-1">
@@ -137,7 +141,7 @@ const PropertyCard = ({ property }) => {
                 <span>{property.bathrooms} bath</span>
               </div>
             )}
-            
+
             {/* Area */}
             {property.area > 0 && (
               <div className="flex items-center gap-1">
@@ -154,7 +158,7 @@ const PropertyCard = ({ property }) => {
             {getTypeIcon(property.type)}
             <span className="capitalize">{property.type}</span>
           </div>
-          
+
           {/* Views */}
           <div className="flex items-center gap-1 text-gray-400 text-xs">
             <FiEye className="w-3 h-3" />
@@ -163,7 +167,7 @@ const PropertyCard = ({ property }) => {
         </div>
 
         {/* Features Tags */}
-        {property.features.length > 0 && (
+        {property.features && property.features.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-4">
             {property.features.slice(0, 3).map((feature, index) => (
               <span
@@ -191,7 +195,7 @@ const PropertyCard = ({ property }) => {
             )}
             <span>{property.approved ? 'Verified' : 'Pending Approval'}</span>
           </div>
-          
+
           <div className="text-gray-400 text-xs">
             {new Date(property.createdAt).toLocaleDateString()}
           </div>

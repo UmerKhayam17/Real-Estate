@@ -1,4 +1,4 @@
-// pages/CreateProperty.js
+// app/(pages)/properties/create/page.js
 'use client'
 
 import React from 'react';
@@ -12,6 +12,7 @@ import {
    FeaturesSection,
    MediaUploadSection
 } from '../components/PropertyFormSections';
+import { toast } from 'react-hot-toast';
 
 const CreateProperty = () => {
    const {
@@ -26,16 +27,25 @@ const CreateProperty = () => {
       goBack
    } = usePropertyForm();
 
-
    const onSubmit = async (e) => {
+      console.log('🎯 FORM SUBMISSION STARTED');
       const result = await handleSubmit(e);
+
       if (result.success) {
-         alert('Property created successfully!');
-         // You can redirect or show success message
+         toast.success('Property created successfully!');
+         console.log('🎉 PROPERTY CREATED SUCCESSFULLY');
+         // Optionally redirect to properties list
+         router.push('/dealer/properties');
       } else {
-         alert(`Error: ${result.error}`);
+         toast.error(result.error || 'Failed to create property');
+         console.log('💥 PROPERTY CREATION FAILED:', result.error);
       }
    };
+
+   // Log form data changes for debugging
+   React.useEffect(() => {
+      console.log('🔄 FORM DATA UPDATED:', formData);
+   }, [formData]);
 
    return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -109,7 +119,7 @@ const CreateProperty = () => {
                         onClick={goBack}
                         disabled={isSubmitting}
                      >
-                       Cancel
+                        Cancel
                      </Button>
                   </ButtonGroup>
                   <ButtonGroup className="justify-end">

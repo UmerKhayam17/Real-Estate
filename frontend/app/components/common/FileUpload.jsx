@@ -170,10 +170,7 @@ const FileUpload = ({
 
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {value.map((file, index) => (
-                     <div
-                        key={index}
-                        className="relative border border-gray-200 rounded-lg p-3 group hover:border-gray-300 transition-colors"
-                     >
+                     <div key={index} className="relative border border-gray-200 rounded-lg p-3 group hover:border-gray-300 transition-colors">
                         {/* Remove Button */}
                         <button
                            type="button"
@@ -186,16 +183,16 @@ const FileUpload = ({
                            <FiX className="w-3 h-3" />
                         </button>
 
-                        {/* File Preview */}
-                        {file.type.startsWith('image/') ? (
+                        {/* File Preview - handle both preview URLs and File objects */}
+                        {file.type?.startsWith('image/') || (file.preview && file.preview.match(/\.(jpg|jpeg|png|gif|webp)$/i)) ? (
                            <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
                               <img
-                                 src={file.preview}
+                                 src={file.preview || URL.createObjectURL(file.file)}
                                  alt={file.name}
                                  className="w-full h-full object-cover"
                               />
                            </div>
-                        ) : file.type.startsWith('video/') ? (
+                        ) : file.type?.startsWith('video/') || (file.preview && file.preview.match(/\.(mp4|mov|avi)$/i)) ? (
                            <div className="aspect-video bg-gray-800 rounded-md flex items-center justify-center">
                               <FiVideo className="w-8 h-8 text-white" />
                            </div>
