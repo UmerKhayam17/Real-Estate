@@ -20,7 +20,8 @@ export const getPropertyImageUrl = (property, index = 0) => {
    if (!property?.media || property.media.length === 0) {
       return null;
    }
-
    const mediaItem = property.media[index] || property.media[0];
+   console.log("the URL IS ",mediaItem)
+
    return getImageUrl(mediaItem?.url);
 };
