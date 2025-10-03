@@ -72,7 +72,7 @@ exports.register = async (req, res, next) => {
 exports.verifyOtp = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
-
+console.log("the re")
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
