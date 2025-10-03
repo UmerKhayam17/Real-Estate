@@ -231,7 +231,6 @@ export const AddressSection = ({ formData, handleInputChange }) => (
    </div>
 );
 
-// components/property/PropertyFormSections.js - MediaUploadSection only
 // Media Upload Section
 export const MediaUploadSection = ({ formData, handleArrayChange }) => {
    const handleFilesChange = (newFiles) => {
@@ -242,7 +241,11 @@ export const MediaUploadSection = ({ formData, handleArrayChange }) => {
          file: fileItem.file, // Actual File object for upload
          preview: fileItem.preview, // Object URL for preview
          name: fileItem.name,
-         type: fileItem.type?.startsWith('image/') ? 'image' : 'video',
+         // FIX: Better file type detection
+         type: fileItem.type?.includes('image') ? 'image' :
+            fileItem.type?.includes('video') ? 'video' :
+               fileItem.name?.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? 'image' :
+                  fileItem.name?.match(/\.(mp4|mov|avi|wmv|flv|webm|mkv)$/i) ? 'video' : 'unknown',
          size: fileItem.size,
          isMain: false, // Will be set based on selection
          caption: ''
@@ -268,8 +271,7 @@ export const MediaUploadSection = ({ formData, handleArrayChange }) => {
             helperText="Upload images and videos of your property. First image will be used as cover."
             maxSize={20 * 1024 * 1024} // 20MB
             className="md:col-span-2"
-         />
-
+         /> 
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
             <div>
                <h4 className="font-medium mb-2">Tips for better media:</h4>

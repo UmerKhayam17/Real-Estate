@@ -1,8 +1,7 @@
 // mutations/propertyMutation.js
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/axios";
+import api, { getAuthHeaders } from "@/lib/axios";
 
-// Create property mutation
 export const useCreateProperty = () => {
    const queryClient = useQueryClient();
 
@@ -10,55 +9,45 @@ export const useCreateProperty = () => {
       mutationFn: async (propertyData) => {
          const formData = new FormData();
 
-         // Append basic fields
          Object.keys(propertyData).forEach(key => {
-            if (key === 'media') return; // Handle media separately
-            if (key === 'location' && propertyData[key].coordinates) {
-               // Convert location to string format "lng,lat"
+            if (key === 'media') return;
+            if (key === 'location') {
                formData.append('location', propertyData[key].coordinates.join(','));
             } else if (typeof propertyData[key] === 'object') {
-               // Handle nested objects (address)
                Object.keys(propertyData[key]).forEach(nestedKey => {
-                  formData.append(`${key}.${nestedKey}`, propertyData[key][nestedKey]);
+                  const value = propertyData[key][nestedKey];
+                  if (value !== null && value !== undefined) {
+                     formData.append(`${key}[${nestedKey}]`, value);
+                  }
                });
-            } else {
+            } else if (propertyData[key] !== null && propertyData[key] !== undefined) {
                formData.append(key, propertyData[key]);
             }
          });
 
-         // Append media files
          if (propertyData.media && propertyData.media.length > 0) {
-            propertyData.media.forEach((file, index) => {
-               if (file.file) { // It's a new file
-                  formData.append('media', file.file);
-                  if (file.caption) {
-                     formData.append('captions', file.caption);
-                  }
+            propertyData.media.forEach((mediaItem) => {
+               if (mediaItem.file instanceof File) {
+                  formData.append('media', mediaItem.file);
                }
             });
-
-            // Set main image index
-            const mainIndex = propertyData.media.findIndex(media => media.isMain);
-            if (mainIndex !== -1) {
-               formData.append('mainImageIndex', mainIndex.toString());
-            }
          }
 
-         const { data } = await api.post('/properties/create', formData, {
-            headers: {
-               'Content-Type': 'multipart/form-data',
-            },
-         });
+         const authHeaders = getAuthHeaders();
+         const headers = {
+            'Content-Type': 'multipart/form-data',
+            ...authHeaders.headers
+         };
+
+         const { data } = await api.post('/properties/create', formData, { headers });
          return data;
       },
       onSuccess: () => {
-         // Invalidate properties queries
          queryClient.invalidateQueries(['properties']);
          queryClient.invalidateQueries(['my-properties']);
       },
    });
 };
-
 // Update property mutation
 export const useUpdateProperty = () => {
    const queryClient = useQueryClient();

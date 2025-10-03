@@ -179,7 +179,6 @@ export const usePropertyForm = () => {
          };
 
          console.log('🚀 FINAL DATA SENT TO API:', submitData);
-         console.log('📤 MEDIA FILES TO UPLOAD:', submitData.media);
 
          // Call the mutation
          const result = await createPropertyMutation.mutateAsync(submitData);

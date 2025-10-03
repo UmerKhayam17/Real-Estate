@@ -1,7 +1,8 @@
 // app/(pages)/properties/create/page.js
 'use client'
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { usePropertyForm } from '@/hooks/usePropertyForm';
 import LocationPicker from '../components/LocationPicker';
 import { Button, ButtonGroup } from '@/app/components/common/Buttons';
@@ -13,8 +14,12 @@ import {
    MediaUploadSection
 } from '../components/PropertyFormSections';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const CreateProperty = () => {
+   const router = useRouter();
+   const { isAuthenticated, isLoading, getToken } = useAuth();
+
    const {
       formData,
       isSubmitting,
@@ -27,30 +32,71 @@ const CreateProperty = () => {
       goBack
    } = usePropertyForm();
 
-   const onSubmit = async (e) => {
-      console.log('🎯 FORM SUBMISSION STARTED');
-      const result = await handleSubmit(e);
+   useEffect(() => {
+      if (!isLoading && !isAuthenticated()) {
+         toast.error('Please login to create a property');
+         router.push('/login');
+      }
+   }, [isAuthenticated, isLoading, router]);
 
-      if (result.success) {
-         toast.success('Property created successfully!');
-         console.log('🎉 PROPERTY CREATED SUCCESSFULLY');
-         // Optionally redirect to properties list
-         router.push('/dealer/properties');
-      } else {
-         toast.error(result.error || 'Failed to create property');
-         console.log('💥 PROPERTY CREATION FAILED:', result.error);
+   const onSubmit = async (e) => {
+      e.preventDefault();
+
+      if (!isAuthenticated()) {
+         toast.error('Please login to create a property');
+         router.push('/login');
+         return;
+      }
+
+      const token = getToken();
+      if (!token) {
+         toast.error('Authentication token missing. Please login again.');
+         router.push('/login');
+         return;
+      }
+
+      try {
+         const result = await handleSubmit(e);
+
+         if (result.success) {
+            toast.success('Property created successfully!');
+            router.push('/dealer/properties');
+         } else {
+            toast.error(result.error || 'Failed to create property');
+         }
+      } catch (error) {
+         toast.error('An unexpected error occurred');
       }
    };
 
-   // Log form data changes for debugging
-   React.useEffect(() => {
-      console.log('🔄 FORM DATA UPDATED:', formData);
-   }, [formData]);
+   if (isLoading) {
+      return (
+         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+               <p className="mt-4 text-gray-600">Checking authentication...</p>
+            </div>
+         </div>
+      );
+   }
+
+   if (!isAuthenticated()) {
+      return (
+         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+               <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h2>
+               <p className="text-gray-600 mb-4">Please login to create a property.</p>
+               <Button onClick={() => router.push('/login')}>
+                  Go to Login
+               </Button>
+            </div>
+         </div>
+      );
+   }
 
    return (
       <div className="min-h-screen bg-gray-50 py-8">
          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Header */}
             <div className="mb-8">
                <h1 className="text-3xl font-bold text-gray-900">Add New Property</h1>
                <p className="mt-2 text-sm text-gray-600">
@@ -58,9 +104,7 @@ const CreateProperty = () => {
                </p>
             </div>
 
-            {/* Property Form */}
             <form onSubmit={onSubmit} className="space-y-8">
-               {/* Basic Information */}
                <div className="bg-white shadow rounded-lg p-6">
                   <BasicInformationSection
                      formData={formData}
@@ -69,7 +113,6 @@ const CreateProperty = () => {
                   />
                </div>
 
-               {/* Property Details */}
                <div className="bg-white shadow rounded-lg p-6">
                   <PropertyDetailsSection
                      formData={formData}
@@ -78,7 +121,6 @@ const CreateProperty = () => {
                   />
                </div>
 
-               {/* Address */}
                <div className="bg-white shadow rounded-lg p-6">
                   <AddressSection
                      formData={formData}
@@ -86,7 +128,6 @@ const CreateProperty = () => {
                   />
                </div>
 
-               {/* Media Upload */}
                <div className="bg-white shadow rounded-lg p-6">
                   <MediaUploadSection
                      formData={formData}
@@ -94,7 +135,6 @@ const CreateProperty = () => {
                   />
                </div>
 
-               {/* Location Coordinates */}
                <div className="bg-white shadow rounded-lg p-6">
                   <LocationPicker
                      coordinates={formData.location.coordinates}
@@ -102,7 +142,6 @@ const CreateProperty = () => {
                   />
                </div>
 
-               {/* Features */}
                <div className="bg-white shadow rounded-lg p-6">
                   <FeaturesSection
                      formData={formData}
@@ -110,7 +149,6 @@ const CreateProperty = () => {
                   />
                </div>
 
-               {/* Form Actions */}
                <div className="bg-white justify-between flex shadow rounded-lg p-6">
                   <ButtonGroup className="justify-start">
                      <Button

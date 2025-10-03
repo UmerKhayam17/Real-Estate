@@ -18,6 +18,22 @@ const FileUpload = ({
    const [error, setError] = useState('');
    const fileInputRef = useRef(null);
 
+   // Enhanced file type detection
+   const getFileType = (file) => {
+      if (file.type?.startsWith('image/')) return 'image';
+      if (file.type?.startsWith('video/')) return 'video';
+
+      // Fallback based on file extension
+      const extension = file.name?.split('.').pop()?.toLowerCase();
+      const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+      const videoExtensions = ['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm', 'mkv'];
+
+      if (imageExtensions.includes(extension)) return 'image';
+      if (videoExtensions.includes(extension)) return 'video';
+
+      return 'unknown';
+   };
+
    // Handle file validation
    const validateFile = (file) => {
       if (file.size > maxSize) {
@@ -46,7 +62,7 @@ const FileUpload = ({
                file,
                preview: URL.createObjectURL(file),
                name: file.name,
-               type: file.type,
+               type: getFileType(file), // Use enhanced type detection
                size: file.size
             };
             validFiles.push(fileWithPreview);
@@ -55,12 +71,15 @@ const FileUpload = ({
 
       if (errors.length > 0) {
          setError(errors.join(', '));
+         setTimeout(() => setError(''), 5000); // Clear error after 5 seconds
       }
 
       if (validFiles.length > 0) {
          const newFiles = multiple ? [...value, ...validFiles] : validFiles;
          onChange(newFiles);
-         setError('');
+         if (errors.length === 0) {
+            setError('');
+         }
       }
    }, [value, multiple, maxSize]);
 
@@ -90,8 +109,13 @@ const FileUpload = ({
       e.target.value = '';
    };
 
-   // Remove file
+   // Remove file - FIX: Revoke object URL to prevent memory leaks
    const removeFile = (index) => {
+      // Revoke the object URL to prevent memory leaks
+      if (value[index]?.preview) {
+         URL.revokeObjectURL(value[index].preview);
+      }
+
       const newFiles = value.filter((_, i) => i !== index);
       onChange(newFiles);
    };
@@ -121,6 +145,16 @@ const FileUpload = ({
          preview: file.preview || '',
          file: file.file || file
       };
+   };
+
+   // Clear all files - FIX: Revoke all object URLs
+   const clearAllFiles = () => {
+      value.forEach(file => {
+         if (file.preview) {
+            URL.revokeObjectURL(file.preview);
+         }
+      });
+      onChange([]);
    };
 
    return (
@@ -205,13 +239,17 @@ const FileUpload = ({
                                     alt={safeFile.name}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
+                                       console.error('Failed to load image:', safeFile.name);
                                        e.target.src = '/api/placeholder/200/200';
                                     }}
                                  />
                               </div>
-                           ) : safeFile.type?.startsWith('video/') ? (
-                              <div className="aspect-video bg-gray-800 rounded-md flex items-center justify-center">
+                           ) : safeFile.type === 'video' ? (
+                              <div className="aspect-video bg-gray-800 rounded-md flex items-center justify-center relative">
                                  <FiVideo className="w-8 h-8 text-white" />
+                                 <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                                    VIDEO
+                                 </div>
                               </div>
                            ) : (
                               <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center">
@@ -225,7 +263,7 @@ const FileUpload = ({
                                  {safeFile.name}
                               </p>
                               <p className="text-xs text-gray-500">
-                                 {formatFileSize(safeFile.size)}
+                                 {formatFileSize(safeFile.size)} • {safeFile.type.toUpperCase()}
                               </p>
                            </div>
                         </div>
@@ -237,7 +275,7 @@ const FileUpload = ({
                {value.length > 1 && (
                   <button
                      type="button"
-                     onClick={() => onChange([])}
+                     onClick={clearAllFiles}
                      className="text-sm text-red-600 hover:text-red-700 font-medium"
                   >
                      Clear all files
