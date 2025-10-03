@@ -7,13 +7,13 @@ export const getImageUrl = (imagePath) => {
       return imagePath;
    }
 
-   // If it's a relative path, prepend backend URL
-   const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+   // For uploads, use the backend base URL directly
+   const backendBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
    // Ensure the path starts with a slash
    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
 
-   return `${backendUrl}${normalizedPath}`;
+   return `${backendBaseUrl}${normalizedPath}`;
 };
 
 export const getPropertyImageUrl = (property, index = 0) => {

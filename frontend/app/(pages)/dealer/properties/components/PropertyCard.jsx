@@ -66,6 +66,14 @@ const PropertyCard = ({ property }) => {
     }
   };
 
+  // In PropertyCard component, add this:
+React.useEffect(() => {
+  if (imageUrl) {
+    console.log('🖼️ Image URL:', imageUrl);
+    console.log('📁 Property media:', property.media);
+  }
+}, [imageUrl, property.media]);
+
   const statusInfo = getStatusInfo(property.status);
 
   return (
