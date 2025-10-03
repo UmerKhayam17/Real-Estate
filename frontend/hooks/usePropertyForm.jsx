@@ -2,9 +2,11 @@
 'use client'
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useCreateProperty } from '@/mutations/propertyMutation';
 
 export const usePropertyForm = () => {
-const router = useRouter();
+   const router = useRouter();
+   const createPropertyMutation = useCreateProperty();
 
    const [formData, setFormData] = useState({
       // Basic Information
@@ -39,7 +41,7 @@ const router = useRouter();
       },
 
       // Media & Features
-      images: [],
+      media: [], // Changed from 'images' to 'media' to match backend
       features: [],
 
       // Management
@@ -72,7 +74,7 @@ const router = useRouter();
       }
    };
 
-   // Handle array fields (features, images)
+   // Handle array fields (features, media)
    const handleArrayChange = (fieldName, value) => {
       setFormData(prev => ({
          ...prev,
@@ -100,9 +102,9 @@ const router = useRouter();
       }));
    };
 
-   const goBack=()=>{
+   const goBack = () => {
       router.back();
-   }
+   };
 
    // Reset form
    const resetForm = () => {
@@ -128,7 +130,7 @@ const router = useRouter();
             type: 'Point',
             coordinates: [0, 0]
          },
-         images: [],
+         media: [],
          features: [],
          agent: '',
          approved: false,
@@ -136,39 +138,64 @@ const router = useRouter();
       });
    };
 
-   // Submit handler
+   // Submit handler with API integration
    const handleSubmit = async (e) => {
       e.preventDefault();
       setIsSubmitting(true);
 
       try {
-         // Prepare data for API
+         console.log('📝 FORM DATA TO BE SENT:', formData);
+
+         // Prepare data for API - match backend structure
          const submitData = {
-            ...formData,
-            // Convert empty strings to numbers or null
-            bedrooms: formData.bedrooms || 0,
-            bathrooms: formData.bathrooms || 0,
-            area: formData.area || 0,
-            // Ensure coordinates are numbers
+            title: formData.title,
+            description: formData.description,
+            price: Number(formData.price) || 0,
+            currency: formData.currency,
+            type: formData.type,
+            saleOrRent: formData.saleOrRent,
+            status: formData.status,
+            bedrooms: Number(formData.bedrooms) || 0,
+            bathrooms: Number(formData.bathrooms) || 0,
+            area: Number(formData.area) || 0,
+            address: {
+               street: formData.address.street,
+               city: formData.address.city,
+               state: formData.address.state,
+               country: formData.address.country,
+               postalCode: formData.address.postalCode
+            },
             location: {
-               ...formData.location,
+               type: 'Point',
                coordinates: formData.location.coordinates.map(coord => Number(coord) || 0)
-            }
+            },
+            features: formData.features,
+            media: formData.media.map(mediaItem => ({
+               file: mediaItem.file, // Actual File object for upload
+               type: mediaItem.type, // 'image' or 'video'
+               isMain: mediaItem.isMain || false,
+               caption: mediaItem.caption || ''
+            }))
          };
 
-         // Here you would make your API call
-         console.log('Submitting property:', submitData);
+         console.log('🚀 FINAL DATA SENT TO API:', submitData);
 
-         // Simulate API call
-         await new Promise(resolve => setTimeout(resolve, 2000));
+         // Call the mutation
+         const result = await createPropertyMutation.mutateAsync(submitData);
+
+         console.log('✅ API RESPONSE:', result);
 
          // Reset form after successful submission
          resetForm();
-         return { success: true, data: submitData };
+         return { success: true, data: result };
 
       } catch (error) {
-         console.error('Error submitting property:', error);
-         return { success: false, error: error.message };
+         console.error('❌ ERROR SUBMITTING PROPERTY:', error);
+         console.error('Error details:', error.response?.data);
+         return {
+            success: false,
+            error: error.response?.data?.message || error.message
+         };
       } finally {
          setIsSubmitting(false);
       }
@@ -177,7 +204,7 @@ const router = useRouter();
    return {
       formData,
       setFormData,
-      isSubmitting,
+      isSubmitting: isSubmitting || createPropertyMutation.isLoading,
       handleInputChange,
       handleNumberChange,
       handleArrayChange,

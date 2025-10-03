@@ -18,6 +18,22 @@ const FileUpload = ({
    const [error, setError] = useState('');
    const fileInputRef = useRef(null);
 
+   // Enhanced file type detection
+   const getFileType = (file) => {
+      if (file.type?.startsWith('image/')) return 'image';
+      if (file.type?.startsWith('video/')) return 'video';
+
+      // Fallback based on file extension
+      const extension = file.name?.split('.').pop()?.toLowerCase();
+      const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+      const videoExtensions = ['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm', 'mkv'];
+
+      if (imageExtensions.includes(extension)) return 'image';
+      if (videoExtensions.includes(extension)) return 'video';
+
+      return 'unknown';
+   };
+
    // Handle file validation
    const validateFile = (file) => {
       if (file.size > maxSize) {
@@ -46,7 +62,7 @@ const FileUpload = ({
                file,
                preview: URL.createObjectURL(file),
                name: file.name,
-               type: file.type,
+               type: getFileType(file), // Use enhanced type detection
                size: file.size
             };
             validFiles.push(fileWithPreview);
@@ -55,12 +71,15 @@ const FileUpload = ({
 
       if (errors.length > 0) {
          setError(errors.join(', '));
+         setTimeout(() => setError(''), 5000); // Clear error after 5 seconds
       }
 
       if (validFiles.length > 0) {
          const newFiles = multiple ? [...value, ...validFiles] : validFiles;
          onChange(newFiles);
-         setError('');
+         if (errors.length === 0) {
+            setError('');
+         }
       }
    }, [value, multiple, maxSize]);
 
@@ -90,26 +109,52 @@ const FileUpload = ({
       e.target.value = '';
    };
 
-   // Remove file
+   // Remove file - FIX: Revoke object URL to prevent memory leaks
    const removeFile = (index) => {
+      // Revoke the object URL to prevent memory leaks
+      if (value[index]?.preview) {
+         URL.revokeObjectURL(value[index].preview);
+      }
+
       const newFiles = value.filter((_, i) => i !== index);
       onChange(newFiles);
    };
 
    // Get file icon based on type
    const getFileIcon = (fileType) => {
-      if (fileType.startsWith('image/')) return <FiImage className="w-5 h-5" />;
-      if (fileType.startsWith('video/')) return <FiVideo className="w-5 h-5" />;
+      if (fileType?.startsWith('image/')) return <FiImage className="w-5 h-5" />;
+      if (fileType?.startsWith('video/')) return <FiVideo className="w-5 h-5" />;
       return <FiFile className="w-5 h-5" />;
    };
 
-   // Format file size
+   // Format file size - FIXED: Handle undefined/NaN values
    const formatFileSize = (bytes) => {
-      if (bytes === 0) return '0 Bytes';
+      if (!bytes || bytes === 0 || isNaN(bytes)) return '0 Bytes';
       const k = 1024;
       const sizes = ['Bytes', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+   };
+
+   // Get safe file properties
+   const getSafeFileProperties = (file) => {
+      return {
+         name: file.name || 'Unknown file',
+         type: file.type || 'application/octet-stream',
+         size: file.size || 0,
+         preview: file.preview || '',
+         file: file.file || file
+      };
+   };
+
+   // Clear all files - FIX: Revoke all object URLs
+   const clearAllFiles = () => {
+      value.forEach(file => {
+         if (file.preview) {
+            URL.revokeObjectURL(file.preview);
+         }
+      });
+      onChange([]);
    };
 
    return (
@@ -169,60 +214,68 @@ const FileUpload = ({
                </h4>
 
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {value.map((file, index) => (
-                     <div
-                        key={index}
-                        className="relative border border-gray-200 rounded-lg p-3 group hover:border-gray-300 transition-colors"
-                     >
-                        {/* Remove Button */}
-                        <button
-                           type="button"
-                           onClick={(e) => {
-                              e.stopPropagation();
-                              removeFile(index);
-                           }}
-                           className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                        >
-                           <FiX className="w-3 h-3" />
-                        </button>
+                  {value.map((file, index) => {
+                     const safeFile = getSafeFileProperties(file);
 
-                        {/* File Preview */}
-                        {file.type.startsWith('image/') ? (
-                           <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
-                              <img
-                                 src={file.preview}
-                                 alt={file.name}
-                                 className="w-full h-full object-cover"
-                              />
-                           </div>
-                        ) : file.type.startsWith('video/') ? (
-                           <div className="aspect-video bg-gray-800 rounded-md flex items-center justify-center">
-                              <FiVideo className="w-8 h-8 text-white" />
-                           </div>
-                        ) : (
-                           <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center">
-                              {getFileIcon(file.type)}
-                           </div>
-                        )}
+                     return (
+                        <div key={index} className="relative border border-gray-200 rounded-lg p-3 group hover:border-gray-300 transition-colors">
+                           {/* Remove Button */}
+                           <button
+                              type="button"
+                              onClick={(e) => {
+                                 e.stopPropagation();
+                                 removeFile(index);
+                              }}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                           >
+                              <FiX className="w-3 h-3" />
+                           </button>
 
-                        {/* File Info */}
-                        <div className="mt-2 space-y-1">
-                           <p className="text-xs font-medium text-gray-900 truncate">
-                              {file.name}
-                           </p>
-                           <p className="text-xs text-gray-500">
-                              {formatFileSize(file.size)}
-                           </p>
+                           {/* File Preview */}
+                           {safeFile.type?.startsWith('image/') ? (
+                              <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
+                                 <img
+                                    src={safeFile.preview}
+                                    alt={safeFile.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                       console.error('Failed to load image:', safeFile.name);
+                                       e.target.src = '/api/placeholder/200/200';
+                                    }}
+                                 />
+                              </div>
+                           ) : safeFile.type === 'video' ? (
+                              <div className="aspect-video bg-gray-800 rounded-md flex items-center justify-center relative">
+                                 <FiVideo className="w-8 h-8 text-white" />
+                                 <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                                    VIDEO
+                                 </div>
+                              </div>
+                           ) : (
+                              <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center">
+                                 {getFileIcon(safeFile.type)}
+                              </div>
+                           )}
+
+                           {/* File Info */}
+                           <div className="mt-2 space-y-1">
+                              <p className="text-xs font-medium text-gray-900 truncate">
+                                 {safeFile.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                 {formatFileSize(safeFile.size)} • {safeFile.type.toUpperCase()}
+                              </p>
+                           </div>
                         </div>
-                     </div>
-                  ))}
+                     );
+                  })}
                </div>
 
                {/* Clear All Button */}
                {value.length > 1 && (
                   <button
                      type="button"
-                     onClick={() => onChange([])}
+                     onClick={clearAllFiles}
                      className="text-sm text-red-600 hover:text-red-700 font-medium"
                   >
                      Clear all files

@@ -234,10 +234,23 @@ export const AddressSection = ({ formData, handleInputChange }) => (
 // Media Upload Section
 export const MediaUploadSection = ({ formData, handleArrayChange }) => {
    const handleFilesChange = (newFiles) => {
-      // Convert File objects to URLs for form data
-      const fileUrls = newFiles.map(fileItem => fileItem.preview);
-      handleArrayChange('images', fileUrls);
+      const mediaItems = newFiles.map(fileItem => ({
+         file: fileItem.file, 
+         preview: fileItem.preview, 
+         name: fileItem.name,
+         type: fileItem.type?.includes('image') ? 'image' :
+            fileItem.type?.includes('video') ? 'video' :
+               fileItem.name?.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? 'image' :
+                  fileItem.name?.match(/\.(mp4|mov|avi|wmv|flv|webm|mkv)$/i) ? 'video' : 'unknown',
+         size: fileItem.size,
+         isMain: false, 
+         caption: ''
+      }));
+
+      handleArrayChange('media', mediaItems);
    };
+
+   const mediaValue = Array.isArray(formData.media) ? formData.media : [];
 
    return (
       <div className="space-y-6">
@@ -245,17 +258,12 @@ export const MediaUploadSection = ({ formData, handleArrayChange }) => {
 
          <FileUpload
             label="Property Images & Videos"
-            value={formData.images.map(url => ({
-               preview: url,
-               name: url.split('/').pop() || 'file',
-               type: url.match(/\.(mp4|mov|avi)$/) ? 'video/mp4' : 'image/jpeg'
-            }))}
+            value={mediaValue}
             onChange={handleFilesChange}
             helperText="Upload images and videos of your property. First image will be used as cover."
             maxSize={20 * 1024 * 1024} // 20MB
             className="md:col-span-2"
-         />
-
+         /> 
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
             <div>
                <h4 className="font-medium mb-2">Tips for better media:</h4>
