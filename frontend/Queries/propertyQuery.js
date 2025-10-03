@@ -17,6 +17,7 @@ export const useProperties = (filters = {}) => {
          });
 
          const { data } = await api.get(`/properties?${params.toString()}`);
+         console.log("the api data is ", data)
          return data;
       },
       staleTime: 5 * 60 * 1000, // 5 minutes

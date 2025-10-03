@@ -43,7 +43,7 @@ const PropertiesPage = () => {
     error,
     isFetching
   } = useProperties(apiFilters);
-
+console.log("the data is here",propertiesData)
   const properties = propertiesData?.items || [];
   const totalProperties = propertiesData?.total || 0;
 

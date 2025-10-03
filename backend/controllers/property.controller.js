@@ -210,7 +210,7 @@ exports.getProperties = async (req, res, next) => {
     const radius = query.radius;
     const sort = query.sort;
 
-    const filter = { approved: true };
+    const filter = { approved: false };
 
     if (q) filter.$text = { $search: q };
     if (city) filter['address.city'] = city;
