@@ -25,7 +25,7 @@ const PropertyCard = ({ property }) => {
 
   // Get main image using the utility function
   const imageUrl = getPropertyImageUrl(property);
-
+console.log("the iamge urls ois s",imageUrl)
   // Format price with commas
   const formatPrice = (price, currency) => {
     if (!price) return 'Price not set';

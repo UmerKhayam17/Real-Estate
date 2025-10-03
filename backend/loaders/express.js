@@ -12,7 +12,7 @@ module.exports = (app) => {
   app.use(express.urlencoded({ extended: true }));
   
 // Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
   // Configure CORS properly
   app.use(cors({
