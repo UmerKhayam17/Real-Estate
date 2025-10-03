@@ -17,16 +17,19 @@ import {
   MdSell,
   MdHouse
 } from 'react-icons/md';
+import { getPropertyImageUrl } from '@/utils/imageUtils';
+import ImageWithFallback from '@/app/components/common/ImageWithFallback';
 
 const PropertyCard = ({ property }) => {
   const [imageError, setImageError] = useState(false);
 
-  // Get main image from media array
-  const mainMedia = property.media?.find(media => media.isMain) || property.media?.[0];
-  const imageUrl = mainMedia?.url || '/api/placeholder/400/300';
+  // Get main image using the utility function
+  const imageUrl = getPropertyImageUrl(property);
 
   // Format price with commas
   const formatPrice = (price, currency) => {
+    if (!price) return 'Price not set';
+
     if (currency === 'PKR') {
       return `₨${price.toLocaleString()}`;
     }
@@ -69,12 +72,18 @@ const PropertyCard = ({ property }) => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden group">
       {/* Image Section */}
       <div className="relative overflow-hidden">
-        <img
-          src={imageError ? '/api/placeholder/400/300' : imageUrl}
-          alt={property.title}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={() => setImageError(true)}
-        />
+        {imageUrl ? (
+          <ImageWithFallback
+            src={imageUrl}
+            alt={property.title || 'Property image'}
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className="w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+            <FiHome className="w-12 h-12 text-gray-400" />
+          </div>
+        )}
 
         {/* Media Count Badge */}
         {property.media && property.media.length > 1 && (
@@ -107,19 +116,22 @@ const PropertyCard = ({ property }) => {
 
         {/* Title */}
         <h2 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-1">
-          {property.title}
+          {property.title || 'Untitled Property'}
         </h2>
 
         {/* Description */}
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-          {property.description}
-        </p>
+        {property.description && (
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+            {property.description}
+          </p>
+        )}
 
         {/* Location */}
         <div className="flex items-center text-gray-500 text-sm mb-4">
-          <FiMapPin className="w-4 h-4 mr-1" />
+          <FiMapPin className="w-4 h-4 mr-1 flex-shrink-0" />
           <span className="line-clamp-1">
-            {property.address?.street}, {property.address?.city}
+            {property.address?.street && `${property.address.street}, `}
+            {property.address?.city || 'Location not specified'}
           </span>
         </div>
 
@@ -130,7 +142,7 @@ const PropertyCard = ({ property }) => {
             {property.bedrooms > 0 && (
               <div className="flex items-center gap-1">
                 <MdBed className="w-4 h-4" />
-                <span>{property.bedrooms} bed</span>
+                <span>{property.bedrooms} bed{property.bedrooms !== 1 ? 's' : ''}</span>
               </div>
             )}
 
@@ -138,7 +150,7 @@ const PropertyCard = ({ property }) => {
             {property.bathrooms > 0 && (
               <div className="flex items-center gap-1">
                 <MdBathtub className="w-4 h-4" />
-                <span>{property.bathrooms} bath</span>
+                <span>{property.bathrooms} bath{property.bathrooms !== 1 ? 's' : ''}</span>
               </div>
             )}
 
@@ -156,13 +168,13 @@ const PropertyCard = ({ property }) => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-1 text-gray-500 text-sm">
             {getTypeIcon(property.type)}
-            <span className="capitalize">{property.type}</span>
+            <span className="capitalize">{property.type || 'property'}</span>
           </div>
 
           {/* Views */}
           <div className="flex items-center gap-1 text-gray-400 text-xs">
             <FiEye className="w-3 h-3" />
-            <span>{property.views} views</span>
+            <span>{property.views || 0} views</span>
           </div>
         </div>
 
@@ -172,9 +184,9 @@ const PropertyCard = ({ property }) => {
             {property.features.slice(0, 3).map((feature, index) => (
               <span
                 key={index}
-                className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-md"
+                className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-md capitalize"
               >
-                {feature.replace('-', ' ')}
+                {feature.replace(/-/g, ' ')}
               </span>
             ))}
             {property.features.length > 3 && (
@@ -197,7 +209,7 @@ const PropertyCard = ({ property }) => {
           </div>
 
           <div className="text-gray-400 text-xs">
-            {new Date(property.createdAt).toLocaleDateString()}
+            {property.createdAt ? new Date(property.createdAt).toLocaleDateString() : 'Recently added'}
           </div>
         </div>
       </div>

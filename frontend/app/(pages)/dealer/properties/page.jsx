@@ -43,14 +43,13 @@ const PropertiesPage = () => {
     error,
     isFetching
   } = useProperties(apiFilters);
-console.log("the data is here",propertiesData)
+  
   const properties = propertiesData?.items || [];
   const totalProperties = propertiesData?.total || 0;
 
   // Log API response
   React.useEffect(() => {
     if (propertiesData) {
-      console.log('📥 PROPERTIES API RESPONSE:', propertiesData);
       console.log('🏠 PROPERTIES RECEIVED:', properties);
     }
   }, [propertiesData, properties]);
