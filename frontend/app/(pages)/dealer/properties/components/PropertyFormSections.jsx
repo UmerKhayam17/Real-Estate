@@ -234,31 +234,23 @@ export const AddressSection = ({ formData, handleInputChange }) => (
 // Media Upload Section
 export const MediaUploadSection = ({ formData, handleArrayChange }) => {
    const handleFilesChange = (newFiles) => {
-      console.log('📁 New files received:', newFiles);
-
-      // Convert File objects to the format needed for form data
       const mediaItems = newFiles.map(fileItem => ({
-         file: fileItem.file, // Actual File object for upload
-         preview: fileItem.preview, // Object URL for preview
+         file: fileItem.file, 
+         preview: fileItem.preview, 
          name: fileItem.name,
-         // FIX: Better file type detection
          type: fileItem.type?.includes('image') ? 'image' :
             fileItem.type?.includes('video') ? 'video' :
                fileItem.name?.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? 'image' :
                   fileItem.name?.match(/\.(mp4|mov|avi|wmv|flv|webm|mkv)$/i) ? 'video' : 'unknown',
          size: fileItem.size,
-         isMain: false, // Will be set based on selection
+         isMain: false, 
          caption: ''
       }));
 
-      console.log('📦 Processed media items:', mediaItems);
       handleArrayChange('media', mediaItems);
    };
 
-   // Safely handle formData.media - ensure it's always an array
    const mediaValue = Array.isArray(formData.media) ? formData.media : [];
-
-   console.log('🖼️ Current media value:', mediaValue);
 
    return (
       <div className="space-y-6">
