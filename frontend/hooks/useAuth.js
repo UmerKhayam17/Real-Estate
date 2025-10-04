@@ -1,51 +1,72 @@
 // hooks/useAuth.js
 'use client';
+import { createContext, useContext, useEffect, useState } from 'react';
 
-import { useState, useEffect } from 'react';
+const AuthContext = createContext();
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = () => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('user');
+      
+      if (token && userData) {
+        try {
+          setUser(JSON.parse(userData));
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+          logout();
+        }
+      }
+      setLoading(false);
+    }
+  };
+
+  const login = (token, userData) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    window.location.href = '/auth/login';
+  };
+
+  const updateUser = (userData) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  const value = {
+    user,
+    login,
+    logout,
+    updateUser,
+    loading,
+    isAuthenticated: !!user,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
 
 export const useAuth = () => {
-   const [token, setToken] = useState(null);
-   const [isLoading, setIsLoading] = useState(true);
-
-   useEffect(() => {
-      if (typeof window !== 'undefined') {
-         const storedToken = localStorage.getItem('token');
-         setToken(storedToken);
-         setIsLoading(false);
-      }
-   }, []);
-
-   const getToken = () => {
-      if (typeof window !== 'undefined') {
-         return localStorage.getItem('token');
-      }
-      return null;
-   };
-
-   const setAuthToken = (newToken) => {
-      if (typeof window !== 'undefined') {
-         localStorage.setItem('token', newToken);
-         setToken(newToken);
-      }
-   };
-
-   const removeAuthToken = () => {
-      if (typeof window !== 'undefined') {
-         localStorage.removeItem('token');
-         setToken(null);
-      }
-   };
-
-   const isAuthenticated = () => {
-      return !!getToken();
-   };
-
-   return {
-      token,
-      getToken,
-      setAuthToken,
-      removeAuthToken,
-      isAuthenticated,
-      isLoading
-   };
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
