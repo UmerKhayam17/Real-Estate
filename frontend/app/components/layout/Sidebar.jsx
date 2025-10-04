@@ -19,7 +19,7 @@ const Sidebar = () => {
             { name: 'Dashboard', href: `/${user.role}/dashboard`, icon: '📊' },
             { name: 'User Management', href: `/${user.role}/users`, icon: '👥' },
             { name: 'Dealer Management', href: `/${user.role}/dealers`, icon: '🏢' },
-            { name: 'Pending Approvals', href: `/${user.role}/approvals`, icon: '⏳' },
+            { name: 'Pending Approvals', href: `/${user.role}/pending-approvals`, icon: '⏳' },
             { name: 'Properties', href: `/${user.role}/properties`, icon: '🏠' },
             { name: 'Bookings', href: `/${user.role}/bookings`, icon: '📅' },
             { name: 'Analytics', href: `/${user.role}/analytics`, icon: '📈' },

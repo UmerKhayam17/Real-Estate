@@ -19,6 +19,7 @@ import {
 } from 'react-icons/md';
 import { getPropertyImageUrl } from '@/utils/imageUtils';
 import ImageWithFallback from '@/app/components/common/ImageWithFallback';
+import Link from 'next/link';
 
 const PropertyCard = ({ property }) => {
   const [imageError, setImageError] = useState(false);
@@ -77,7 +78,8 @@ React.useEffect(() => {
   const statusInfo = getStatusInfo(property.status);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden group">
+    <Link href={`/dealer/properties/${property.id}`} className="block">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden group cursor-pointer">
       {/* Image Section */}
       <div className="relative overflow-hidden">
         {imageUrl ? (
@@ -222,6 +224,7 @@ React.useEffect(() => {
         </div>
       </div>
     </div>
+    </Link>
   );
 };
 
