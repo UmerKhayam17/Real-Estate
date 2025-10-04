@@ -7,7 +7,7 @@ const ctrl = require('../controllers/user.controller');
 const router = express.Router();
 
 router.get('/me', auth, ctrl.getProfile);
-router.get('/', auth, role(['admin']), ctrl.listUsers);
+router.get('/getall', auth, role(['admin']), ctrl.getAllUsers);
 // Get all users (admin only)
 
 module.exports = router;
