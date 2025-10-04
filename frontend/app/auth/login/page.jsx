@@ -34,8 +34,8 @@ export default function LoginPage() {
           router.push("/dealer/dashboard");
         }
       } 
-      else if (data.user.role === "admin") {
-        router.push("/admin/dashboard");
+      else if(data.user.role==="admin"){
+        router.push("/admin/page")
       } 
       else {
         router.push("/dashboard");
