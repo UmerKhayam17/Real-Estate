@@ -13,14 +13,18 @@ export const getImageUrl = (imagePath) => {
    // Ensure the path starts with a slash
    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
 
-   return `${backendBaseUrl}${normalizedPath}`;
+   const fullUrl = `${backendBaseUrl}${normalizedPath}`;
+
+   return fullUrl;
 };
 
 export const getPropertyImageUrl = (property, index = 0) => {
    if (!property?.media || property.media.length === 0) {
       return null;
    }
-   const mediaItem = property.media[index] || property.media[0];
+   //  Try to get the main image first, then fallback to index
+   const mainImage = property.media.find(media => media.isMain);
+   const mediaItem = mainImage || property.media[index] || property.media[0];
 
    return getImageUrl(mediaItem?.url);
 };

@@ -12,7 +12,7 @@ export const useProperties = (filters = {}) => {
          // Add filters to params
          Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== '') {
-               params.append(key, value);
+               params.append(key, value.toString())
             }
          });
 
