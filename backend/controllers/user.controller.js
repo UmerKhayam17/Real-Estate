@@ -10,10 +10,14 @@ exports.getProfile = async (req, res, next) => {
   }
 };
 
-exports.listUsers = async (req, res, next) => {
+exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find().select('-passwordHash').limit(500);
-    res.json(users);
+    const users = await User.find().select('-passwordHash');
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users
+    });
   } catch (err) {
     next(err);
   }

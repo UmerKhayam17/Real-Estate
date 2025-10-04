@@ -1,10 +1,11 @@
 // app/auth/login/page.js
-"use client";
+'use client';
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "../../../lib/axios";
 import Link from "next/link";
+import { useAuth } from "../../../hooks/useAuth";
 
 export default function LoginPage() {
   const [form, setForm] = useState({
@@ -12,16 +13,18 @@ export default function LoginPage() {
     password: "",
   });
   const router = useRouter();
+  const { login } = useAuth();
 
   const loginMutation = useMutation({
     mutationFn: async (loginData) => {
       const res = await api.post("/auth/login", loginData);
+      console.log("the res is ",res)
       return res.data;
     },
     onSuccess: (data) => {
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      login(data.token, data.user);
       
+      // Handle redirection based on user role
       if (data.user.role === "dealer") {
         if (data.dealerStatus?.status === "profile_incomplete") {
           router.push("/dealer/profile");
@@ -32,7 +35,7 @@ export default function LoginPage() {
         }
       } 
       else if(data.user.role==="admin"){
-        router.push("/admin/dashboard")
+        router.push("/admin/page")
       } 
       else {
         router.push("/dashboard");
@@ -51,7 +54,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
-        {/* Back to Home */}
         <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -59,7 +61,6 @@ export default function LoginPage() {
           Back to Home
         </Link>
 
-        {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
@@ -96,7 +97,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loginMutation.isLoading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               {loginMutation.isLoading ? "Signing In..." : "Sign In"}
             </button>
