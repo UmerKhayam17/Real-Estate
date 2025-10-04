@@ -26,7 +26,6 @@ const PropertyCard = ({ property }) => {
 
   // Get main image using the utility function
   const imageUrl = getPropertyImageUrl(property);
-console.log("the iamge urls ois s",imageUrl)
   // Format price with commas
   const formatPrice = (price, currency) => {
     if (!price) return 'Price not set';
@@ -67,18 +66,10 @@ console.log("the iamge urls ois s",imageUrl)
     }
   };
 
-  // In PropertyCard component, add this:
-React.useEffect(() => {
-  if (imageUrl) {
-    console.log('🖼️ Image URL:', imageUrl);
-    console.log('📁 Property media:', property.media);
-  }
-}, [imageUrl, property.media]);
-
   const statusInfo = getStatusInfo(property.status);
 
   return (
-    <Link href={`/dealer/properties/${property.id}`} className="block">
+    <Link href={`/dealer/properties/${property._id}`} className="block">
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden group cursor-pointer">
       {/* Image Section */}
       <div className="relative overflow-hidden">

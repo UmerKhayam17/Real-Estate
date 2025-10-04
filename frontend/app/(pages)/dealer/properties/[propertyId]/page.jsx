@@ -21,6 +21,11 @@ const PropertyDetailsPage = () => {
       error
    } = useProperty(propertyId);
 
+   // Add this debug effect
+   React.useEffect(() => {
+      console.log('🔍 Property data received:', property);
+   }, [property]);
+
    if (isLoading) {
       return (
          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -77,6 +82,8 @@ const PropertyDetailsPage = () => {
 
    const statusInfo = getStatusInfo(property.status);
    const mainImageUrl = getPropertyImageUrl(property);
+
+   
 
    return (
       <div className="min-h-screen bg-gray-50">
