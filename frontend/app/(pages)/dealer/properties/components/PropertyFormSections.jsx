@@ -8,6 +8,7 @@ import {
    Checkbox
 } from '@/app/components/common/FormFields';
 import FileUpload from '@/app/components/common/FileUpload';
+import { getImageUrl } from '@/utils/imageUtils';
 
 // Options for dropdowns
 export const PROPERTY_TYPES = [
@@ -232,25 +233,52 @@ export const AddressSection = ({ formData, handleInputChange }) => (
 );
 
 // Media Upload Section
-export const MediaUploadSection = ({ formData, handleArrayChange }) => {
+export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia, onSetMainMedia }) => {
    const handleFilesChange = (newFiles) => {
       const mediaItems = newFiles.map(fileItem => ({
-         file: fileItem.file, 
-         preview: fileItem.preview, 
+         file: fileItem.file,
+         preview: fileItem.preview,
          name: fileItem.name,
          type: fileItem.type?.includes('image') ? 'image' :
             fileItem.type?.includes('video') ? 'video' :
                fileItem.name?.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? 'image' :
                   fileItem.name?.match(/\.(mp4|mov|avi|wmv|flv|webm|mkv)$/i) ? 'video' : 'unknown',
          size: fileItem.size,
-         isMain: false, 
+         isMain: formData.media.length === 0 && newFiles.length === 1,
          caption: ''
       }));
 
-      handleArrayChange('media', mediaItems);
+      handleArrayChange('media', [...formData.media, ...mediaItems]);
+   };
+
+   const handleDelete = (index, mediaId) => {
+      if (mediaId && onDeleteMedia) {
+         // Existing media with ID
+         onDeleteMedia(mediaId);
+      } else {
+         // Newly uploaded media without ID
+         const updatedMedia = formData.media.filter((_, i) => i !== index);
+         handleArrayChange('media', updatedMedia);
+      }
+   };
+
+   const handleSetMain = (index, mediaId) => {
+      if (onSetMainMedia) {
+         onSetMainMedia(mediaId);
+      } else {
+         const updatedMedia = formData.media.map((media, i) => ({
+            ...media,
+            isMain: i === index
+         }));
+         handleArrayChange('media', updatedMedia);
+      }
    };
 
    const mediaValue = Array.isArray(formData.media) ? formData.media : [];
+
+   // Separate existing media (with _id) from new uploads (with file object)
+   const existingMedia = mediaValue.filter(media => media._id);
+   const newMedia = mediaValue.filter(media => !media._id && media.file);
 
    return (
       <div className="space-y-6">
@@ -260,30 +288,100 @@ export const MediaUploadSection = ({ formData, handleArrayChange }) => {
             label="Property Images & Videos"
             value={mediaValue}
             onChange={handleFilesChange}
+            onDelete={handleDelete}
+            onSetMain={handleSetMain}
             helperText="Upload images and videos of your property. First image will be used as cover."
             maxSize={20 * 1024 * 1024} // 20MB
             className="md:col-span-2"
-         /> 
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-            <div>
-               <h4 className="font-medium mb-2">Tips for better media:</h4>
-               <ul className="list-disc list-inside space-y-1">
-                  <li>Use high-quality images</li>
-                  <li>Show all rooms and key features</li>
-                  <li>Include exterior shots</li>
-                  <li>Good lighting is essential</li>
-               </ul>
+         />
+
+         {/* Show existing media from database */}
+         {existingMedia.length > 0 && (
+            <div className="mt-6">
+               <h4 className="font-medium mb-4 text-lg">Existing Media</h4>
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {existingMedia.map((media, index) => {
+                     const mediaIndex = mediaValue.findIndex(m => m._id === media._id);
+                     return (
+                        <div key={media._id} className="relative group border rounded-lg overflow-hidden">
+                           <img
+                              src={getImageUrl(media.url)}
+                              alt={media.caption || `Media ${index + 1}`}
+                              className="w-full h-24 object-cover"
+                              onError={(e) => {
+                                 console.error('Failed to load existing image:', media.url);
+                                 e.target.src = '/api/placeholder/200/200';
+                              }}
+                           />
+                           {media.isMain && (
+                              <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                                 Main
+                              </span>
+                           )}
+                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <button
+                                 type="button"
+                                 onClick={() => handleSetMain(mediaIndex, media._id)}
+                                 className="bg-white text-gray-800 p-1 rounded mr-1 text-xs"
+                              >
+                                 Set Main
+                              </button>
+                              <button
+                                 type="button"
+                                 onClick={() => handleDelete(mediaIndex, media._id)}
+                                 className="bg-red-500 text-white p-1 rounded text-xs"
+                              >
+                                 Delete
+                              </button>
+                           </div>
+                        </div>
+                     );
+                  })}
+               </div>
             </div>
-            <div>
-               <h4 className="font-medium mb-2">Requirements:</h4>
-               <ul className="list-disc list-inside space-y-1">
-                  <li>Max 20MB per file</li>
-                  <li>Images: JPEG, PNG, WebP</li>
-                  <li>Videos: MP4, MOV, AVI</li>
-                  <li>Recommended: 5-10 media files</li>
-               </ul>
+         )}
+
+         {/* Show newly uploaded media previews */}
+         {newMedia.length > 0 && (
+            <div className="mt-4">
+               <h4 className="font-medium mb-2">New Uploads</h4>
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {newMedia.map((media, index) => {
+                     const mediaIndex = mediaValue.findIndex(m => m.file === media.file);
+                     return (
+                        <div key={index} className="relative group border rounded-lg overflow-hidden">
+                           <img
+                              src={media.preview}
+                              alt={media.caption || `New media ${index + 1}`}
+                              className="w-full h-24 object-cover"
+                           />
+                           {media.isMain && (
+                              <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                                 Main
+                              </span>
+                           )}
+                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <button
+                                 type="button"
+                                 onClick={() => handleSetMain(mediaIndex)}
+                                 className="bg-white text-gray-800 p-1 rounded mr-1 text-xs"
+                              >
+                                 Set Main
+                              </button>
+                              <button
+                                 type="button"
+                                 onClick={() => handleDelete(mediaIndex)}
+                                 className="bg-red-500 text-white p-1 rounded text-xs"
+                              >
+                                 Delete
+                              </button>
+                           </div>
+                        </div>
+                     );
+                  })}
+               </div>
             </div>
-         </div>
+         )}
       </div>
    );
 };

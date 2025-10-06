@@ -1,7 +1,7 @@
 // app/(pages)/dealer/properties/form/[[...id]]/page.jsx
 'use client'
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { usePropertyForm } from '@/hooks/usePropertyForm';
 import { useProperty } from '@/Queries/propertyQuery';
@@ -15,13 +15,13 @@ import {
    MediaUploadSection
 } from '../../components/PropertyFormSections';
 import { toast } from 'react-hot-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { isAuthenticated } from '@/lib/auth'; // Import directly from lib
 
 const PropertyForm = () => {
    const router = useRouter();
    const params = useParams();
-   const propertyId = params.id?.[0]; // Get the ID if it exists
-   const { isAuthenticated, isLoading: authLoading, getToken } = useAuth();
+   const propertyId = params.id?.[0];
+   const [isMounted, setIsMounted] = useState(false);
 
    const { data: property, isLoading: propertyLoading, error } = useProperty(propertyId);
 
@@ -33,32 +33,33 @@ const PropertyForm = () => {
       handleNumberChange,
       handleArrayChange,
       handleLocationChange,
+      handleDeleteMedia,
+      handleSetMainMedia,
       handleSubmit,
       resetForm,
       goBack
-   } = usePropertyForm(property); // Pass property to hook
+   } = usePropertyForm(property);
 
    const isEditMode = Boolean(propertyId);
 
+   // Set mounted state to avoid hydration issues
    useEffect(() => {
-      if (!authLoading && !isAuthenticated()) {
+      setIsMounted(true);
+   }, []);
+
+   // Check authentication only on client side
+   useEffect(() => {
+      if (isMounted && !isAuthenticated()) {
          toast.error(`Please login to ${isEditMode ? 'edit' : 'create'} a property`);
          router.push('/login');
       }
-   }, [isAuthenticated, authLoading, router, isEditMode]);
+   }, [isMounted, router, isEditMode]);
 
    const onSubmit = async (e) => {
       e.preventDefault();
 
       if (!isAuthenticated()) {
          toast.error(`Please login to ${isEditMode ? 'edit' : 'create'} a property`);
-         router.push('/login');
-         return;
-      }
-
-      const token = getToken();
-      if (!token) {
-         toast.error('Authentication token missing. Please login again.');
          router.push('/login');
          return;
       }
@@ -77,14 +78,32 @@ const PropertyForm = () => {
       }
    };
 
-   if (authLoading || (isEditMode && propertyLoading)) {
+   // Show loading state during SSR and initial client render
+   if (!isMounted || (isEditMode && propertyLoading)) {
       return (
          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
             <div className="text-center">
                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
                <p className="mt-4 text-gray-600">
-                  {isEditMode ? 'Loading property...' : 'Checking authentication...'}
+                  {isEditMode ? 'Loading property...' : 'Loading...'}
                </p>
+            </div>
+         </div>
+      );
+   }
+
+   // Check authentication after mount
+   if (!isAuthenticated()) {
+      return (
+         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+               <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h2>
+               <p className="text-gray-600 mb-4">
+                  Please login to {isEditMode ? 'edit' : 'create'} a property.
+               </p>
+               <Button onClick={() => router.push('/login')}>
+                  Go to Login
+               </Button>
             </div>
          </div>
       );
@@ -98,22 +117,6 @@ const PropertyForm = () => {
                <p className="text-gray-600 mb-4">The property you're trying to edit doesn't exist.</p>
                <Button onClick={() => router.push('/dealer/properties')}>
                   Back to Properties
-               </Button>
-            </div>
-         </div>
-      );
-   }
-
-   if (!isAuthenticated()) {
-      return (
-         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <div className="text-center">
-               <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h2>
-               <p className="text-gray-600 mb-4">
-                  Please login to {isEditMode ? 'edit' : 'create'} a property.
-               </p>
-               <Button onClick={() => router.push('/login')}>
-                  Go to Login
                </Button>
             </div>
          </div>
@@ -136,6 +139,7 @@ const PropertyForm = () => {
             </div>
 
             <form onSubmit={onSubmit} className="space-y-8">
+               {/* Your form sections remain the same */}
                <div className="bg-white shadow rounded-lg p-6">
                   <BasicInformationSection
                      formData={formData}
@@ -163,6 +167,8 @@ const PropertyForm = () => {
                   <MediaUploadSection
                      formData={formData}
                      handleArrayChange={handleArrayChange}
+                     onDeleteMedia={handleDeleteMedia}
+                     onSetMainMedia={handleSetMainMedia}
                   />
                </div>
 
@@ -197,7 +203,6 @@ const PropertyForm = () => {
                         variant="secondary"
                         onClick={() => {
                            if (isEditMode && property) {
-                              // Reset to original property data
                               setFormData({
                                  title: property.title || '',
                                  description: property.description || '',
@@ -227,7 +232,6 @@ const PropertyForm = () => {
                                  views: property.views || 0
                               });
                            } else {
-                              // Reset to empty form for create
                               resetForm();
                            }
                         }}
@@ -238,7 +242,7 @@ const PropertyForm = () => {
                      <Button
                         type="submit"
                         variant="primary"
-                        isSubmitting={isSubmitting}
+                        disabled={isSubmitting}
                      >
                         {isSubmitting
                            ? `${isEditMode ? 'Updating' : 'Creating'} Property...`

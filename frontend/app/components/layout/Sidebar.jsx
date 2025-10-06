@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getUser, logout } from '@/lib/auth';
@@ -9,8 +9,26 @@ const Sidebar = () => {
     const pathname = usePathname();
     const router = useRouter();
     const user = getUser();
-    
-    // console.log("the user is ", user);
+    const [isMounted, setIsMounted] = useState(false);
+
+    // This ensures we only render after component mounts (client-side)
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    // Don't render anything during SSR to avoid hydration mismatch
+    if (!isMounted) {
+        return (
+            <div className="bg-white shadow-xl border-r border-gray-200 w-64 h-full">
+                {/* Loading skeleton or empty state */}
+                <div className="animate-pulse p-4">
+                    <div className="h-6 bg-gray-200 rounded mb-4"></div>
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                </div>
+            </div>
+        );
+    }
 
     if (!user) return null;
 

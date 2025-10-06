@@ -1,47 +1,23 @@
+// backend/controllers/property.controller.js
 const Property = require('../models/Property.model');
 const Inquiry = require('../models/Inquiry.model');
 const fs = require('fs');
 const path = require('path');
 
+// CREATE property
 exports.createProperty = async (req, res, next) => {
   try {
     const data = req.body;
     data.agent = req.user.id;
-    // Parse location if provided as "lng,lat"
-    if (data.location && typeof data.location === 'string') {
-      const [lng, lat] = data.location.split(',').map(Number);
-      data.location = { type: 'Point', coordinates: [lng, lat] };
-    }
 
     // Handle file uploads
     if (req.files && req.files.length) {
-      data.media = [];
-
-      req.files.forEach((file, index) => {
-        const mediaItem = {
-          url: `/uploads/user_${req.user.id}/${file.filename}`,
-          type: file.mimetype.startsWith('image/') ? 'image' : 'video',
-          isMain: false, // Will be set based on mainImageIndex
-          caption: req.body.captions ? (req.body.captions[index] || '') : ''
-        };
-
-        data.media.push(mediaItem);
-      });
-
-      // Set main image based on user selection
-      const mainImageIndex = parseInt(req.body.mainImageIndex);
-      if (!isNaN(mainImageIndex)) {
-        // Ensure the index is valid
-        if (mainImageIndex >= 0 && mainImageIndex < data.media.length) {
-          data.media[mainImageIndex].isMain = true;
-        } else {
-          // Default to first image if invalid index
-          data.media[0].isMain = true;
-        }
-      } else {
-        // Default to first image if no main image specified
-        data.media[0].isMain = true;
-      }
+      data.media = req.files.map((file, index) => ({
+        url: `/uploads/user_${req.user.id}/${file.filename}`,
+        type: file.mimetype.startsWith('image/') ? 'image' : 'video',
+        isMain: index === 0, // First image as main
+        caption: req.body.captions ? (req.body.captions[index] || '') : ''
+      }));
     }
 
     const property = await Property.create(data);
@@ -59,49 +35,193 @@ exports.createProperty = async (req, res, next) => {
   }
 };
 
-exports.updatePropertyMedia = async (req, res, next) => {
+// GET ALL properties
+exports.getProperties = async (req, res, next) => {
+  try {
+    const query = req.query;
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 12;
+
+    const filter = {};
+
+    // Search and filter parameters
+    if (query.q) filter.$text = { $search: query.q };
+    if (query.city) filter['address.city'] = query.city;
+    if (query.type && query.type !== 'all') filter.type = query.type;
+    if (query.saleOrRent && query.saleOrRent !== 'all') filter.saleOrRent = query.saleOrRent;
+    if (query.status && query.status !== 'all') filter.status = query.status;
+    if (query.approved !== undefined) filter.approved = query.approved === 'true';
+
+    if (query.bedrooms) filter.bedrooms = Number(query.bedrooms);
+    if (query.bathrooms) filter.bathrooms = Number(query.bathrooms);
+
+    if (query.minPrice || query.maxPrice) {
+      filter.price = {};
+      if (query.minPrice) filter.price.$gte = Number(query.minPrice);
+      if (query.maxPrice) filter.price.$lte = Number(query.maxPrice);
+    }
+
+    // Location-based search
+    if (query.lat && query.lng) {
+      const meters = query.radius ? Number(query.radius) * 1000 : 5000;
+      filter.location = {
+        $near: {
+          $geometry: { type: 'Point', coordinates: [Number(query.lng), Number(query.lat)] },
+          $maxDistance: meters
+        }
+      };
+    }
+
+    // Sorting
+    let sortObj = { createdAt: -1 };
+    if (query.sort === 'price_asc') sortObj = { price: 1 };
+    if (query.sort === 'price_desc') sortObj = { price: -1 };
+    if (query.sort === 'views') sortObj = { views: -1 };
+
+    const skip = (page - 1) * limit;
+    const total = await Property.countDocuments(filter);
+    const items = await Property.find(filter)
+      .skip(skip)
+      .limit(limit)
+      .sort(sortObj)
+      .populate('agent', 'name email phone');
+
+    res.json({
+      total,
+      page: page,
+      limit: limit,
+      items
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET SINGLE property
+exports.getProperty = async (req, res, next) => {
+  try {
+    const property = await Property.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { views: 1 } },
+      { new: true }
+    ).populate('agent', 'name email phone');
+
+    if (!property) return res.status(404).json({ message: 'Property not found' });
+    res.json(property);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// UPDATE property
+exports.updateProperty = async (req, res, next) => {
   try {
     const property = await Property.findById(req.params.id);
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
+    if (!property) return res.status(404).json({ message: 'Property not found' });
 
     // Check ownership
     if (String(property.agent) !== String(req.user.id) && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    // Handle new file uploads
-    if (req.files && req.files.length) {
-      const newMedia = [];
+    console.log('🔄 Update request body:', req.body);
+    console.log('🔄 Update files:', req.files);
 
-      req.files.forEach((file, index) => {
-        const mediaItem = {
-          url: `/uploads/user_${req.user.id}/${file.filename}`,
-          type: file.mimetype.startsWith('image/') ? 'image' : 'video',
-          isMain: false,
-          caption: req.body.captions ? (req.body.captions[index] || '') : ''
-        };
+    // Update basic fields
+    const updateData = { ...req.body };
 
-        newMedia.push(mediaItem);
-      });
+    // Handle location update
+    if (req.body.location && req.body.location.coordinates) {
+      property.location = {
+        type: 'Point',
+        coordinates: req.body.location.coordinates.map(coord => parseFloat(coord))
+      };
+    }
 
-      // Add new media to existing media
-      property.media.push(...newMedia);
+    // Update address if provided
+    if (req.body.address) {
+      property.address = { ...property.address, ...req.body.address };
+    }
 
-      // Set main image if specified
-      const mainImageIndex = parseInt(req.body.mainImageIndex);
-      if (!isNaN(mainImageIndex)) {
-        // Reset all main flags
-        property.media.forEach(media => {
-          media.isMain = false;
+    // Update other fields
+    const fieldsToUpdate = ['title', 'description', 'price', 'currency', 'type',
+      'saleOrRent', 'status', 'bedrooms', 'bathrooms', 'area', 'features'];
+
+    fieldsToUpdate.forEach(field => {
+      if (req.body[field] !== undefined) {
+        property[field] = req.body[field];
+      }
+    });
+
+    // Handle media updates - this is the key part
+    if (req.body.media && typeof req.body.media === 'string') {
+      try {
+        const mediaUpdates = JSON.parse(req.body.media);
+
+        // Update existing media metadata (captions, isMain, etc.)
+        mediaUpdates.forEach(mediaUpdate => {
+          if (mediaUpdate._id) {
+            // Update existing media item
+            const existingMedia = property.media.id(mediaUpdate._id);
+            if (existingMedia) {
+              if (mediaUpdate.caption !== undefined) existingMedia.caption = mediaUpdate.caption;
+              if (mediaUpdate.isMain !== undefined) existingMedia.isMain = mediaUpdate.isMain;
+            }
+          }
         });
 
-        // Set new main media (index relative to all media)
-        const actualIndex = property.media.length - newMedia.length + mainImageIndex;
-        if (actualIndex >= 0 && actualIndex < property.media.length) {
-          property.media[actualIndex].isMain = true;
+        // Handle main image changes
+        const newMainMedia = mediaUpdates.find(media => media.isMain);
+        if (newMainMedia && newMainMedia._id) {
+          // Reset all main flags
+          property.media.forEach(media => {
+            media.isMain = false;
+          });
+          // Set the new main media
+          const mainMedia = property.media.id(newMainMedia._id);
+          if (mainMedia) {
+            mainMedia.isMain = true;
+          }
         }
+      } catch (error) {
+        console.error('Error parsing media updates:', error);
+      }
+    }
+
+    // Handle new file uploads
+    if (req.files && req.files.length > 0) {
+      const newMedia = req.files.map((file, index) => ({
+        url: `/uploads/user_${req.user.id}/${file.filename}`,
+        type: file.mimetype.startsWith('image/') ? 'image' : 'video',
+        isMain: property.media.length === 0 && index === 0, // Set as main if no existing media
+        caption: req.body.captions ? (req.body.captions[index] || '') : ''
+      }));
+
+      property.media.push(...newMedia);
+    }
+
+    // Handle media deletions if mediaIdsToDelete is provided
+    if (req.body.mediaIdsToDelete) {
+      const mediaIdsToDelete = Array.isArray(req.body.mediaIdsToDelete)
+        ? req.body.mediaIdsToDelete
+        : JSON.parse(req.body.mediaIdsToDelete);
+
+      mediaIdsToDelete.forEach(mediaId => {
+        const mediaToDelete = property.media.id(mediaId);
+        if (mediaToDelete) {
+          // Delete file from filesystem
+          const filePath = mediaToDelete.url.replace('/uploads/', 'uploads/');
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+          // Remove from array
+          property.media.pull(mediaId);
+        }
+      });
+
+      // If we deleted the main media and there are other media, set first one as main
+      if (property.media.length > 0 && !property.media.some(media => media.isMain)) {
+        property.media[0].isMain = true;
       }
     }
 
@@ -120,200 +240,20 @@ exports.updatePropertyMedia = async (req, res, next) => {
   }
 };
 
-exports.setMainMedia = async (req, res, next) => {
-  try {
-    const property = await Property.findById(req.params.id);
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
-
-    // Check ownership
-    if (String(property.agent) !== String(req.user.id) && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-
-    const mediaId = req.body.mediaId;
-    const mediaItem = property.media.id(mediaId);
-
-    if (!mediaItem) {
-      return res.status(404).json({ message: 'Media item not found' });
-    }
-
-    // Reset all main flags
-    property.media.forEach(media => {
-      media.isMain = false;
-    });
-
-    // Set the selected media as main
-    mediaItem.isMain = true;
-
-    await property.save();
-    res.json(property);
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.deleteMedia = async (req, res, next) => {
-  try {
-    const property = await Property.findById(req.params.id);
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
-
-    // Check ownership
-    if (String(property.agent) !== String(req.user.id) && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-
-    const mediaId = req.body.mediaId;
-    const mediaItem = property.media.id(mediaId);
-
-    if (!mediaItem) {
-      return res.status(404).json({ message: 'Media item not found' });
-    }
-
-    // Delete file from filesystem
-    const filePath = mediaItem.url.replace('/uploads/', 'uploads/');
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-
-    // Remove from array
-    property.media.pull(mediaId);
-
-    // If we deleted the main media and there are other media, set first one as main
-    if (mediaItem.isMain && property.media.length > 0) {
-      property.media[0].isMain = true;
-    }
-
-    await property.save();
-    res.json(property);
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.getProperties = async (req, res, next) => {
-  try {
-    const query = req.query;
-    const page = parseInt(query.page) || 1;
-    const limit = parseInt(query.limit) || 12;
-    const q = query.q;
-    const city = query.city;
-    const minPrice = query.minPrice;
-    const maxPrice = query.maxPrice;
-    const bedrooms = query.bedrooms;
-    const bathrooms = query.bathrooms;
-    const lat = query.lat;
-    const lng = query.lng;
-    const radius = query.radius;
-    const sort = query.sort;
-    const approved = query.approved; // ADD THIS LINE
-
-    const filter = {};
-
-    // ADD THE APPROVED FILTER
-    if (approved !== undefined) {
-      filter.approved = approved === 'true';
-    }
-
-    if (q) filter.$text = { $search: q };
-    if (city) filter['address.city'] = city;
-    if (bedrooms) filter.bedrooms = Number(bedrooms);
-    if (bathrooms) filter.bathrooms = Number(bathrooms);
-    if (minPrice || maxPrice) {
-      filter.price = {};
-      if (minPrice) filter.price.$gte = Number(minPrice);
-      if (maxPrice) filter.price.$lte = Number(maxPrice);
-    }
-
-    if (lat && lng) {
-      const meters = radius ? Number(radius) * 1000 : 5000;
-      filter.location = {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [Number(lng), Number(lat)] },
-          $maxDistance: meters
-        }
-      };
-    }
-
-    let sortObj = { createdAt: -1 };
-    if (sort === 'price_asc') sortObj = { price: 1 };
-    if (sort === 'price_desc') sortObj = { price: -1 };
-    if (sort === 'views') sortObj = { views: -1 };
-
-    const skip = (page - 1) * limit;
-    const total = await Property.countDocuments(filter);
-    const items = await Property.find(filter)
-      .skip(skip)
-      .limit(limit)
-      .sort(sortObj)
-      .populate('agent', 'name email phone');
-
-    console.log('🔍 Backend Filter Applied:', filter); // Add this for debugging
-    console.log('🔍 Query Parameters Received:', query); // Add this for debugging
-
-    res.json({
-      total,
-      page: page,
-      limit: limit,
-      items
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.getProperty = async (req, res, next) => {
-  try {
-    const prop = await Property.findByIdAndUpdate(
-      req.params.id,
-      { $inc: { views: 1 } },
-      { new: true }
-    ).populate('agent', 'name email phone');
-
-    if (!prop) return res.status(404).json({ message: 'Property not found' });
-    res.json(prop);
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.updateProperty = async (req, res, next) => {
-  try {
-    const prop = await Property.findById(req.params.id);
-    if (!prop) return res.status(404).json({ message: 'Property not found' });
-    if (String(prop.agent) !== String(req.user.id) && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-
-    Object.assign(prop, req.body);
-
-    // Parse location if provided as "lng,lat"
-    if (req.body.location && typeof req.body.location === 'string') {
-      const [lng, lat] = req.body.location.split(',').map(Number);
-      prop.location = { type: 'Point', coordinates: [lng, lat] };
-    }
-
-    await prop.save();
-    res.json(prop);
-  } catch (err) {
-    next(err);
-  }
-};
-
+// DELETE property
 exports.deleteProperty = async (req, res, next) => {
   try {
-    const prop = await Property.findById(req.params.id);
-    if (!prop) return res.status(404).json({ message: 'Property not found' });
-    if (String(prop.agent) !== String(req.user.id) && req.user.role !== 'admin') {
+    const property = await Property.findById(req.params.id);
+    if (!property) return res.status(404).json({ message: 'Property not found' });
+
+    // Check ownership
+    if (String(property.agent) !== String(req.user.id) && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
     // Cleanup all media files
-    if (prop.media && prop.media.length) {
-      prop.media.forEach(media => {
+    if (property.media && property.media.length) {
+      property.media.forEach(media => {
         const filePath = media.url.replace('/uploads/', 'uploads/');
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
@@ -321,8 +261,8 @@ exports.deleteProperty = async (req, res, next) => {
       });
     }
 
-    await prop.deleteOne();
-    res.json({ message: 'Deleted' });
+    await property.deleteOne();
+    res.json({ message: 'Property deleted successfully' });
   } catch (err) {
     next(err);
   }

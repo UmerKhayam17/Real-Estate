@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useCreateProperty, useUpdateProperty } from '@/mutations/propertyMutation';
+import  { isAuthenticated } from '@/lib/auth';
+import { toast } from 'react-hot-toast';
 
 export const usePropertyForm = (existingProperty = null) => {
    const router = useRouter();
@@ -10,23 +12,17 @@ export const usePropertyForm = (existingProperty = null) => {
    const updatePropertyMutation = useUpdateProperty();
 
    const [formData, setFormData] = useState({
-      // Basic Information
+      // Initial empty state
       title: '',
       description: '',
       price: 0,
       currency: 'PKR',
-
-      // Property Classification
       type: 'residential',
       saleOrRent: 'sale',
       status: 'available',
-
-      // Property Specifications
       bedrooms: '',
       bathrooms: '',
       area: '',
-
-      // Address
       address: {
          street: '',
          city: '',
@@ -34,24 +30,19 @@ export const usePropertyForm = (existingProperty = null) => {
          country: 'Pakistan',
          postalCode: ''
       },
-
-      // Location (GeoJSON)
       location: {
          type: 'Point',
          coordinates: [0, 0]
       },
-
-      // Media & Features
       media: [],
       features: [],
-
-      // Management
       agent: '',
       approved: false,
       views: 0
    });
 
    const [isSubmitting, setIsSubmitting] = useState(false);
+   const [mediaToDelete, setMediaToDelete] = useState([]);
 
    // Populate form when existingProperty changes
    useEffect(() => {
@@ -138,6 +129,26 @@ export const usePropertyForm = (existingProperty = null) => {
       }));
    };
 
+   // Add function to handle media deletion
+   const handleDeleteMedia = (mediaId) => {
+      setMediaToDelete(prev => [...prev, mediaId]);
+      setFormData(prev => ({
+         ...prev,
+         media: prev.media.filter(media => media._id !== mediaId)
+      }));
+   };
+
+   // Add function to handle media reordering or main image change
+   const handleSetMainMedia = (mediaId) => {
+      setFormData(prev => ({
+         ...prev,
+         media: prev.media.map(media => ({
+            ...media,
+            isMain: media._id === mediaId
+         }))
+      }));
+   };
+
    const goBack = () => {
       router.back();
    };
@@ -177,12 +188,19 @@ export const usePropertyForm = (existingProperty = null) => {
    // Submit handler for both create and update
    const handleSubmit = async (e, propertyId = null) => {
       e.preventDefault();
+
+      if (!isAuthenticated()) {
+         toast.error('Please login to continue');
+         router.push('/login');
+         return { success: false, error: 'Not authenticated' };
+      }
+
       setIsSubmitting(true);
 
       try {
          console.log('📝 FORM DATA TO BE SENT:', formData);
 
-         // Prepare data for API - match backend structure
+         // Prepare the data for API
          const submitData = {
             title: formData.title,
             description: formData.description,
@@ -206,32 +224,34 @@ export const usePropertyForm = (existingProperty = null) => {
                coordinates: formData.location.coordinates.map(coord => Number(coord) || 0)
             },
             features: formData.features,
-            media: formData.media.map(mediaItem => ({
-               file: mediaItem.file,
-               type: mediaItem.type,
-               isMain: mediaItem.isMain || false,
-               caption: mediaItem.caption || ''
-            }))
+            media: formData.media // Include media metadata
          };
+
+         // For updates, include media to delete
+         if (propertyId && mediaToDelete.length > 0) {
+            submitData.mediaIdsToDelete = mediaToDelete;
+         }
 
          console.log('🚀 FINAL DATA SENT TO API:', submitData);
 
          let result;
          if (propertyId) {
-            // Update existing property
             result = await updatePropertyMutation.mutateAsync({
                id: propertyId,
                propertyData: submitData
             });
          } else {
-            // Create new property
             result = await createPropertyMutation.mutateAsync(submitData);
          }
 
          console.log('✅ API RESPONSE:', result);
 
+         // Clear media to delete after successful update
+         if (propertyId) {
+            setMediaToDelete([]);
+         }
+
          if (!propertyId) {
-            // Only reset form for new properties
             resetForm();
          }
 
@@ -239,7 +259,7 @@ export const usePropertyForm = (existingProperty = null) => {
 
       } catch (error) {
          console.error('❌ ERROR SUBMITTING PROPERTY:', error);
-         console.error('Error details:', error.response?.data);
+         console.error('Error response:', error.response?.data);
          return {
             success: false,
             error: error.response?.data?.message || error.message
@@ -257,6 +277,8 @@ export const usePropertyForm = (existingProperty = null) => {
       handleNumberChange,
       handleArrayChange,
       handleLocationChange,
+      handleDeleteMedia,
+      handleSetMainMedia,
       handleSubmit,
       resetForm,
       goBack

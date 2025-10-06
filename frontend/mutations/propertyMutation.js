@@ -48,13 +48,62 @@ export const useCreateProperty = () => {
       },
    });
 };
+
 // Update property mutation
 export const useUpdateProperty = () => {
    const queryClient = useQueryClient();
 
    return useMutation({
-      mutationFn: async ({ id, ...updateData }) => {
-         const { data } = await api.put(`/properties/${id}`, updateData);
+      mutationFn: async ({ id, propertyData }) => {
+         const formData = new FormData();
+
+         // Append all basic fields
+         Object.keys(propertyData).forEach(key => {
+            if (key === 'media') return; // Handle media separately
+
+            if (key === 'location') {
+               formData.append('location', JSON.stringify(propertyData[key]));
+            } else if (key === 'address') {
+               formData.append('address', JSON.stringify(propertyData[key]));
+            } else if (key === 'features') {
+               formData.append('features', JSON.stringify(propertyData[key]));
+            } else if (propertyData[key] !== null && propertyData[key] !== undefined) {
+               formData.append(key, propertyData[key]);
+            }
+         });
+
+         // Handle media for update - different approach than create
+         if (propertyData.media && propertyData.media.length > 0) {
+            // Send media metadata as JSON string
+            const mediaMetadata = propertyData.media.map(mediaItem => ({
+               _id: mediaItem._id, // For existing media
+               type: mediaItem.type,
+               isMain: mediaItem.isMain || false,
+               caption: mediaItem.caption || '',
+               // Don't send file data here, only metadata
+            }));
+            formData.append('media', JSON.stringify(mediaMetadata));
+
+            // Append new files separately
+            propertyData.media.forEach((mediaItem) => {
+               if (mediaItem.file instanceof File) {
+                  formData.append('media', mediaItem.file); // This will be handled as new upload
+               }
+            });
+         }
+
+         // Handle media deletions
+         if (propertyData.mediaIdsToDelete && propertyData.mediaIdsToDelete.length > 0) {
+            formData.append('mediaIdsToDelete', JSON.stringify(propertyData.mediaIdsToDelete));
+         }
+
+         const authHeaders = getAuthHeaders();
+         const headers = {
+            'Content-Type': 'multipart/form-data',
+            ...authHeaders.headers
+         };
+
+         const { data } = await api.put(`/properties/${id}`, formData, { headers });
          return data;
       },
       onSuccess: (data, variables) => {
@@ -78,79 +127,6 @@ export const useDeleteProperty = () => {
          queryClient.invalidateQueries(['properties']);
          queryClient.invalidateQueries(['my-properties']);
          queryClient.removeQueries(['property', id]);
-      },
-   });
-};
-
-// Media management mutations
-export const useUpdatePropertyMedia = () => {
-   const queryClient = useQueryClient();
-
-   return useMutation({
-      mutationFn: async ({ id, mediaFiles, captions = [], mainImageIndex }) => {
-         const formData = new FormData();
-
-         mediaFiles.forEach((file, index) => {
-            formData.append('media', file.file);
-            if (captions[index]) {
-               formData.append('captions', captions[index]);
-            }
-         });
-
-         if (mainImageIndex !== undefined) {
-            formData.append('mainImageIndex', mainImageIndex.toString());
-         }
-
-         const { data } = await api.post(`/properties/${id}/media`, formData, {
-            headers: {
-               'Content-Type': 'multipart/form-data',
-            },
-         });
-         return data;
-      },
-      onSuccess: (data, variables) => {
-         queryClient.invalidateQueries(['property', variables.id]);
-         queryClient.invalidateQueries(['my-properties']);
-      },
-   });
-};
-
-export const useSetMainMedia = () => {
-   const queryClient = useQueryClient();
-
-   return useMutation({
-      mutationFn: async ({ id, mediaId }) => {
-         const { data } = await api.patch(`/properties/${id}/media/main`, { mediaId });
-         return data;
-      },
-      onSuccess: (data, variables) => {
-         queryClient.invalidateQueries(['property', variables.id]);
-         queryClient.invalidateQueries(['my-properties']);
-      },
-   });
-};
-
-export const useDeleteMedia = () => {
-   const queryClient = useQueryClient();
-
-   return useMutation({
-      mutationFn: async ({ id, mediaId }) => {
-         const { data } = await api.delete(`/properties/${id}/media`, { data: { mediaId } });
-         return data;
-      },
-      onSuccess: (data, variables) => {
-         queryClient.invalidateQueries(['property', variables.id]);
-         queryClient.invalidateQueries(['my-properties']);
-      },
-   });
-};
-
-// Contact property mutation
-export const useContactProperty = () => {
-   return useMutation({
-      mutationFn: async ({ id, contactData }) => {
-         const { data } = await api.post(`/properties/${id}/contact`, contactData);
-         return data;
       },
    });
 };

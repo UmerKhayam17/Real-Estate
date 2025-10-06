@@ -54,7 +54,7 @@ const PropertiesPage = ({
       }
       // If showAll is true, don't apply any approval filter (show everything)
 
-      console.log('🔍 API FILTERS SENT:', apiFilter);
+      // console.log('🔍 API FILTERS SENT:', apiFilter);
       return apiFilter;
    }, [searchQuery, filters, showOnlyApproved, showOnlyPending, showAll]);
 
@@ -78,12 +78,12 @@ const PropertiesPage = ({
    // Log API response
    React.useEffect(() => {
       if (propertiesData) {
-         console.log('🏠 PROPERTIES RECEIVED:', properties);
-         console.log('🔍 Approval stats:', {
-            approved: approvedCount,
-            pending: pendingCount,
-            total: totalProperties
-         });
+         // console.log('🏠 PROPERTIES RECEIVED:', properties);
+         // console.log('🔍 Approval stats:', {
+         //    approved: approvedCount,
+         //    pending: pendingCount,
+         //    total: totalProperties
+         // });
       }
    }, [propertiesData, properties, approvedCount, pendingCount, totalProperties]);
 
