@@ -18,7 +18,8 @@ const PropertiesPage = ({
    hideStats = false,
    title = "Properties",
    description = "Browse through our collection of premium properties",
-   showAddButton = true
+   showAddButton = true,
+   showEditButton = false // New prop to control edit button visibility
 }) => {
    const [searchQuery, setSearchQuery] = useState('');
    const [filters, setFilters] = useState({
@@ -236,7 +237,8 @@ const PropertiesPage = ({
                      <PropertyCard
                         key={property._id}
                         property={property}
-                        showApprovalStatus={showAll} // Show approval badge when showing all
+                        showApprovalStatus={showAll} 
+                        showEditButton={showEditButton} 
                      />
                   ))}
                </div>

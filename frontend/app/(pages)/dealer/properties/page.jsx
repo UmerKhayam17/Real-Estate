@@ -1,16 +1,16 @@
 // app/(pages)/properties/page.jsx
-// app/(pages)/admin/all-properties/page.jsx
 import PropertiesPage from './get-all/page';
 
-const AdminAllPropertiesPage = () => {
+const AllProperties = () => {
   return (
     <PropertiesPage
-      showAll={true} // Show all properties for admin management
+      showAll={true} 
       title="All Properties"
       description="Manage all properties in the system"
-      showAddButton={false} // Admin might not need add button here
+      showAddButton={false} 
+      showEditButton={true}
     />
   );
 };
 
-export default AdminAllPropertiesPage;
+export default AllProperties;

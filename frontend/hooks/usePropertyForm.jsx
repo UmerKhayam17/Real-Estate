@@ -1,12 +1,13 @@
-// hooks/usePropertyForm.js
+// hooks/usePropertyForm.js - Updated for both create and edit
 'use client'
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useCreateProperty } from '@/mutations/propertyMutation';
+import { useState, useEffect } from 'react';
+import { useCreateProperty, useUpdateProperty } from '@/mutations/propertyMutation';
 
-export const usePropertyForm = () => {
+export const usePropertyForm = (existingProperty = null) => {
    const router = useRouter();
    const createPropertyMutation = useCreateProperty();
+   const updatePropertyMutation = useUpdateProperty();
 
    const [formData, setFormData] = useState({
       // Basic Information
@@ -37,20 +38,55 @@ export const usePropertyForm = () => {
       // Location (GeoJSON)
       location: {
          type: 'Point',
-         coordinates: [0, 0] // [lng, lat]
+         coordinates: [0, 0]
       },
 
       // Media & Features
-      media: [], // Changed from 'images' to 'media' to match backend
+      media: [],
       features: [],
 
       // Management
-      agent: '', // Will be set from user context
+      agent: '',
       approved: false,
       views: 0
    });
 
    const [isSubmitting, setIsSubmitting] = useState(false);
+
+   // Populate form when existingProperty changes
+   useEffect(() => {
+      if (existingProperty) {
+         console.log('📝 POPULATING FORM WITH EXISTING PROPERTY:', existingProperty);
+         setFormData({
+            title: existingProperty.title || '',
+            description: existingProperty.description || '',
+            price: existingProperty.price || 0,
+            currency: existingProperty.currency || 'PKR',
+            type: existingProperty.type || 'residential',
+            saleOrRent: existingProperty.saleOrRent || 'sale',
+            status: existingProperty.status || 'available',
+            bedrooms: existingProperty.bedrooms || '',
+            bathrooms: existingProperty.bathrooms || '',
+            area: existingProperty.area || '',
+            address: {
+               street: existingProperty.address?.street || '',
+               city: existingProperty.address?.city || '',
+               state: existingProperty.address?.state || '',
+               country: existingProperty.address?.country || 'Pakistan',
+               postalCode: existingProperty.address?.postalCode || ''
+            },
+            location: {
+               type: 'Point',
+               coordinates: existingProperty.location?.coordinates || [0, 0]
+            },
+            media: existingProperty.media || [],
+            features: existingProperty.features || [],
+            agent: existingProperty.agent || '',
+            approved: existingProperty.approved || false,
+            views: existingProperty.views || 0
+         });
+      }
+   }, [existingProperty]);
 
    // Handle input changes
    const handleInputChange = (e) => {
@@ -138,8 +174,8 @@ export const usePropertyForm = () => {
       });
    };
 
-   // Submit handler with API integration
-   const handleSubmit = async (e) => {
+   // Submit handler for both create and update
+   const handleSubmit = async (e, propertyId = null) => {
       e.preventDefault();
       setIsSubmitting(true);
 
@@ -171,8 +207,8 @@ export const usePropertyForm = () => {
             },
             features: formData.features,
             media: formData.media.map(mediaItem => ({
-               file: mediaItem.file, // Actual File object for upload
-               type: mediaItem.type, // 'image' or 'video'
+               file: mediaItem.file,
+               type: mediaItem.type,
                isMain: mediaItem.isMain || false,
                caption: mediaItem.caption || ''
             }))
@@ -180,13 +216,25 @@ export const usePropertyForm = () => {
 
          console.log('🚀 FINAL DATA SENT TO API:', submitData);
 
-         // Call the mutation
-         const result = await createPropertyMutation.mutateAsync(submitData);
+         let result;
+         if (propertyId) {
+            // Update existing property
+            result = await updatePropertyMutation.mutateAsync({
+               id: propertyId,
+               propertyData: submitData
+            });
+         } else {
+            // Create new property
+            result = await createPropertyMutation.mutateAsync(submitData);
+         }
 
          console.log('✅ API RESPONSE:', result);
 
-         // Reset form after successful submission
-         resetForm();
+         if (!propertyId) {
+            // Only reset form for new properties
+            resetForm();
+         }
+
          return { success: true, data: result };
 
       } catch (error) {
@@ -204,7 +252,7 @@ export const usePropertyForm = () => {
    return {
       formData,
       setFormData,
-      isSubmitting: isSubmitting || createPropertyMutation.isLoading,
+      isSubmitting: isSubmitting || createPropertyMutation.isLoading || updatePropertyMutation.isLoading,
       handleInputChange,
       handleNumberChange,
       handleArrayChange,
