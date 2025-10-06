@@ -1,11 +1,27 @@
 // app/(pages)/properties/[propertyId]/page.jsx
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useProperty } from '@/Queries/propertyQuery';
-import { FiArrowLeft, FiMapPin, FiHome, FiDollarSign, FiEye } from 'react-icons/fi';
-import { MdBathtub, MdBed, MdOutlineSquareFoot, MdSell } from 'react-icons/md';
-import { getPropertyImageUrl } from '@/utils/imageUtils';
+import {
+   FiArrowLeft,
+   FiMapPin,
+   FiHome,
+   FiDollarSign,
+   FiEye,
+   FiUser,
+   FiPhone,
+   FiMail
+} from 'react-icons/fi';
+import {
+   MdBathtub,
+   MdBed,
+   MdOutlineSquareFoot,
+   MdSell,
+   MdLocationOn,
+   MdVerified
+} from 'react-icons/md';
+import { getImageUrl , getPropertyImageUrl } from '@/utils/imageUtils';
 import ImageWithFallback from '@/app/components/common/ImageWithFallback';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -14,12 +30,37 @@ const PropertyDetailsPage = () => {
    const params = useParams();
    const router = useRouter();
    const propertyId = params.propertyId;
+   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+   const [imageErrors, setImageErrors] = useState({});
 
    const {
       data: property,
       isLoading,
       error
    } = useProperty(propertyId);
+
+   // Handle image errors
+   const handleImageError = (imageUrl) => {
+      console.error('❌ Image failed to load:', imageUrl);
+      setImageErrors(prev => ({ ...prev, [imageUrl]: true }));
+   };
+
+   // Get all images from media array
+   const images = property?.media?.filter(media => media.type === 'image') || [];
+   // Get the current main image URL
+   const mainImageUrl = images[selectedImageIndex]?.url ?
+      getImageUrl(images[selectedImageIndex].url) :
+      getPropertyImageUrl(property);
+
+   // Debug the image URLs
+   React.useEffect(() => {
+      if (images.length > 0) {
+         console.log('🖼️ All image URLs:', images.map(img => ({
+            original: img.url,
+            processed: getImageUrl(img.url)
+         })));
+      }
+   }, [images]);
 
    if (isLoading) {
       return (
@@ -74,9 +115,10 @@ const PropertyDetailsPage = () => {
             return { color: 'text-gray-600 bg-gray-50', text: status };
       }
    };
-
+   
+   // Get coordinates for map
+   const coordinates = property.location?.coordinates || [];
    const statusInfo = getStatusInfo(property.status);
-   const mainImageUrl = getPropertyImageUrl(property);
 
    return (
       <div className="min-h-screen bg-gray-50">
@@ -108,41 +150,54 @@ const PropertyDetailsPage = () => {
                <div className="space-y-4">
                   {/* Main Image */}
                   <div className="rounded-xl overflow-hidden bg-gray-100 aspect-[4/3]">
-                     {mainImageUrl ? (
+                     {mainImageUrl && !imageErrors[mainImageUrl] ? (
                         <ImageWithFallback
                            src={mainImageUrl}
                            alt={property.title}
-                           className="w-full h-full object-cover"
+                           className="w-full h-full object-cover cursor-pointer"
+                           onError={() => handleImageError(mainImageUrl)}
                         />
                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                           <FiHome className="w-16 h-16 text-gray-400" />
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                           <div className="text-center">
+                              <FiHome className="w-16 h-16 text-gray-400 mx-auto mb-2" />
+                              <p className="text-gray-500 text-sm">Image not available</p>
+                           </div>
                         </div>
                      )}
                   </div>
 
                   {/* Thumbnail Gallery */}
-                  {property.media && property.media.length > 1 && (
+                  {images.length > 1 && (
                      <div className="grid grid-cols-4 gap-2">
-                        {property.media.slice(0, 4).map((media, index) => (
-                           <div key={index} className="rounded-lg overflow-hidden bg-gray-100 aspect-square">
-                              <ImageWithFallback
-                                 src={media.url}
-                                 alt={`${property.title} - Image ${index + 1}`}
-                                 className="w-full h-full object-cover"
-                              />
-                           </div>
-                        ))}
-                        {property.media.length > 4 && (
-                           <div className="rounded-lg bg-gray-100 aspect-square flex items-center justify-center">
-                              <span className="text-gray-600 font-medium">
-                                 +{property.media.length - 4}
-                              </span>
-                           </div>
-                        )}
+                        {images.map((media, index) => {
+                           const thumbUrl = getImageUrl(media.url);
+                           return (
+                              <div
+                                 key={media._id}
+                                 className={`rounded-lg overflow-hidden bg-gray-100 aspect-square cursor-pointer border-2 ${selectedImageIndex === index ? 'border-primary-600' : 'border-transparent'
+                                    }`}
+                                 onClick={() => setSelectedImageIndex(index)}
+                              >
+                                 {thumbUrl && !imageErrors[thumbUrl] ? (
+                                    <ImageWithFallback
+                                       src={thumbUrl}
+                                       alt={`${property.title} - Image ${index + 1}`}
+                                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                                       onError={() => handleImageError(thumbUrl)}
+                                    />
+                                 ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-gray-300">
+                                       <FiHome className="w-6 h-6 text-gray-500" />
+                                    </div>
+                                 )}
+                              </div>
+                           );
+                        })}
                      </div>
                   )}
                </div>
+
 
                {/* Property Details */}
                <div className="space-y-6">
@@ -161,6 +216,13 @@ const PropertyDetailsPage = () => {
                            <span className="capitalize">{property.saleOrRent}</span>
                            <span>•</span>
                            <span className="capitalize">{property.type}</span>
+                           {property.approved && (
+                              <>
+                                 <span>•</span>
+                                 <MdVerified className="w-4 h-4 text-green-500" />
+                                 <span className="text-green-600">Verified</span>
+                              </>
+                           )}
                         </div>
                      </div>
                      <div className="text-right">
@@ -170,6 +232,11 @@ const PropertyDetailsPage = () => {
                               <span className="text-lg font-normal text-gray-500">/month</span>
                            )}
                         </div>
+                        {property.area > 0 && (
+                           <div className="text-sm text-gray-500 mt-1">
+                              {property.area.toLocaleString()} sq ft
+                           </div>
+                        )}
                      </div>
                   </div>
 
@@ -182,9 +249,15 @@ const PropertyDetailsPage = () => {
                         <FiMapPin className="w-5 h-5 mr-2 flex-shrink-0" />
                         <span>
                            {property.address?.street && `${property.address.street}, `}
-                           {property.address?.city}, {property.address?.state} {property.address?.zipCode}
+                           {property.address?.city}, {property.address?.state} {property.address?.postalCode}
                         </span>
                      </div>
+                     {coordinates.length === 2 && (
+                        <div className="flex items-center text-gray-500 text-sm mt-1">
+                           <MdLocationOn className="w-4 h-4 mr-1" />
+                           <span>Location: {coordinates[1]}, {coordinates[0]}</span>
+                        </div>
+                     )}
                   </div>
 
                   {/* Description */}
@@ -230,12 +303,12 @@ const PropertyDetailsPage = () => {
                   {/* Additional Features */}
                   {property.features && property.features.length > 0 && (
                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Features</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Features & Amenities</h3>
                         <div className="flex flex-wrap gap-2">
                            {property.features.map((feature, index) => (
                               <span
                                  key={index}
-                                 className="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm capitalize"
+                                 className="inline-block bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm capitalize border border-gray-200"
                               >
                                  {feature.replace(/-/g, ' ')}
                               </span>
@@ -245,42 +318,93 @@ const PropertyDetailsPage = () => {
                   )}
 
                   {/* Property Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="bg-white rounded-lg p-4 border border-gray-200">
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Property Details</h3>
-                        <dl className="space-y-2">
+                        <dl className="space-y-3">
                            <div className="flex justify-between">
                               <dt className="text-gray-600">Property Type</dt>
-                              <dd className="text-gray-900 capitalize">{property.type}</dd>
+                              <dd className="text-gray-900 font-medium capitalize">{property.type}</dd>
                            </div>
                            <div className="flex justify-between">
-                              <dt className="text-gray-600">Year Built</dt>
-                              <dd className="text-gray-900">{property.yearBuilt || 'N/A'}</dd>
+                              <dt className="text-gray-600">Sale/Rent</dt>
+                              <dd className="text-gray-900 font-medium capitalize">{property.saleOrRent}</dd>
                            </div>
                            <div className="flex justify-between">
-                              <dt className="text-gray-600">Parking Spaces</dt>
-                              <dd className="text-gray-900">{property.parkingSpaces || 'N/A'}</dd>
+                              <dt className="text-gray-600">Status</dt>
+                              <dd className="text-gray-900 font-medium capitalize">{property.status}</dd>
                            </div>
-                        </dl>
-                     </div>
-
-                     <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
-                        <dl className="space-y-2">
                            <div className="flex justify-between">
-                              <dt className="text-gray-600">Listed by</dt>
-                              <dd className="text-gray-900">
-                                 {property.dealer?.name || 'Unknown Dealer'}
-                              </dd>
+                              <dt className="text-gray-600">Currency</dt>
+                              <dd className="text-gray-900 font-medium">{property.currency}</dd>
                            </div>
                            <div className="flex justify-between">
                               <dt className="text-gray-600">Listed on</dt>
-                              <dd className="text-gray-900">
+                              <dd className="text-gray-900 font-medium">
                                  {property.createdAt ? new Date(property.createdAt).toLocaleDateString() : 'N/A'}
                               </dd>
                            </div>
                         </dl>
                      </div>
+
+                     <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
+                        {property.agent && (
+                           <dl className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                 <FiUser className="w-4 h-4 text-gray-500" />
+                                 <div>
+                                    <dt className="text-gray-600 text-sm">Agent Name</dt>
+                                    <dd className="text-gray-900 font-medium">{property.agent.name}</dd>
+                                 </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 <FiPhone className="w-4 h-4 text-gray-500" />
+                                 <div>
+                                    <dt className="text-gray-600 text-sm">Phone</dt>
+                                    <dd className="text-gray-900 font-medium">{property.agent.phone}</dd>
+                                 </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 <FiMail className="w-4 h-4 text-gray-500" />
+                                 <div>
+                                    <dt className="text-gray-600 text-sm">Email</dt>
+                                    <dd className="text-gray-900 font-medium">{property.agent.email}</dd>
+                                 </div>
+                              </div>
+                           </dl>
+                        )}
+                        {!property.agent && (
+                           <p className="text-gray-500 text-sm">No agent information available</p>
+                        )}
+                     </div>
+                  </div>
+
+                  {/* Address Details */}
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Address Details</h3>
+                     <dl className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                           <dt className="text-gray-600 text-sm">Street</dt>
+                           <dd className="text-gray-900 font-medium">{property.address?.street || 'N/A'}</dd>
+                        </div>
+                        <div>
+                           <dt className="text-gray-600 text-sm">City</dt>
+                           <dd className="text-gray-900 font-medium">{property.address?.city || 'N/A'}</dd>
+                        </div>
+                        <div>
+                           <dt className="text-gray-600 text-sm">State</dt>
+                           <dd className="text-gray-900 font-medium">{property.address?.state || 'N/A'}</dd>
+                        </div>
+                        <div>
+                           <dt className="text-gray-600 text-sm">Postal Code</dt>
+                           <dd className="text-gray-900 font-medium">{property.address?.postalCode || 'N/A'}</dd>
+                        </div>
+                        <div className="md:col-span-2">
+                           <dt className="text-gray-600 text-sm">Country</dt>
+                           <dd className="text-gray-900 font-medium">{property.address?.country || 'N/A'}</dd>
+                        </div>
+                     </dl>
                   </div>
                </div>
             </div>

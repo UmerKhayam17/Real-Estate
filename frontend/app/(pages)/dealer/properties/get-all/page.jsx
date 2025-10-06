@@ -1,0 +1,272 @@
+// app/(pages)/properties/page.jsx
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import PropertyCard from '../components/PropertyCard';
+import PropertyFilters from '../components/PropertyFilters';
+import { useProperties } from '@/Queries/propertyQuery';
+import { FiHome, FiPlus, FiLoader, FiCheck, FiClock } from 'react-icons/fi';
+import Link from 'next/link';
+
+// Define prop types
+const PropertiesPage = ({
+   showOnlyApproved = false,
+   showOnlyPending = false,
+   showAll = false, // New prop to show all properties
+   hideFilters = false,
+   hideHeader = false,
+   hideStats = false,
+   title = "Properties",
+   description = "Browse through our collection of premium properties",
+   showAddButton = true
+}) => {
+   const [searchQuery, setSearchQuery] = useState('');
+   const [filters, setFilters] = useState({
+      type: 'all',
+      saleOrRent: 'all',
+      status: 'all',
+      minPrice: '',
+      maxPrice: '',
+      bedrooms: '',
+      city: ''
+   });
+
+   // Prepare API filters
+   const apiFilters = useMemo(() => {
+      const apiFilter = {};
+
+      if (searchQuery) apiFilter.q = searchQuery;
+      if (filters.type !== 'all') apiFilter.type = filters.type;
+      if (filters.saleOrRent !== 'all') apiFilter.saleOrRent = filters.saleOrRent;
+      if (filters.status !== 'all') apiFilter.status = filters.status;
+      if (filters.minPrice) apiFilter.minPrice = filters.minPrice;
+      if (filters.maxPrice) apiFilter.maxPrice = filters.maxPrice;
+      if (filters.bedrooms) apiFilter.bedrooms = filters.bedrooms;
+      if (filters.city) apiFilter.city = filters.city;
+
+      // Add approval filters based on props
+      // Only apply approval filter if explicitly requested
+      if (showOnlyApproved) {
+         apiFilter.approved = true;
+      } else if (showOnlyPending) {
+         apiFilter.approved = false;
+      }
+      // If showAll is true, don't apply any approval filter (show everything)
+
+      console.log('🔍 API FILTERS SENT:', apiFilter);
+      return apiFilter;
+   }, [searchQuery, filters, showOnlyApproved, showOnlyPending, showAll]);
+
+   const {
+      data: propertiesData,
+      isLoading,
+      error,
+      isFetching
+   } = useProperties(apiFilters);
+
+   const properties = propertiesData?.items || [];
+   const totalProperties = propertiesData?.total || 0;
+
+   // Calculate stats based on filtered properties
+   const approvedCount = properties.filter(p => p.approved).length;
+   const pendingCount = properties.filter(p => !p.approved).length;
+   const availableCount = properties.filter(p => p.status === 'available').length;
+   const forSaleCount = properties.filter(p => p.saleOrRent === 'sale').length;
+   const forRentCount = properties.filter(p => p.saleOrRent === 'rent').length;
+
+   // Log API response
+   React.useEffect(() => {
+      if (propertiesData) {
+         console.log('🏠 PROPERTIES RECEIVED:', properties);
+         console.log('🔍 Approval stats:', {
+            approved: approvedCount,
+            pending: pendingCount,
+            total: totalProperties
+         });
+      }
+   }, [propertiesData, properties, approvedCount, pendingCount, totalProperties]);
+
+   if (error) {
+      console.error('❌ PROPERTIES API ERROR:', error);
+      return (
+         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+               <h2 className="text-xl font-semibold text-gray-900">Error loading properties</h2>
+               <p className="text-gray-600 mt-2">Please try again later.</p>
+               <p className="text-sm text-gray-500 mt-1">{error.message}</p>
+            </div>
+         </div>
+      );
+   }
+
+   return (
+      <div className="min-h-screen bg-gray-50 py-8">
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Header - Conditionally rendered */}
+            {!hideHeader && (
+               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+                  <div>
+                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <FiHome className="w-8 h-8" />
+                        {title}
+                        {/* Show badge for filter type */}
+                        {showOnlyApproved && (
+                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              <FiCheck className="w-4 h-4 mr-1" />
+                              Verified Only
+                           </span>
+                        )}
+                        {showOnlyPending && (
+                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                              <FiClock className="w-4 h-4 mr-1" />
+                              Pending Only
+                           </span>
+                        )}
+                        {showAll && (
+                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                              All Properties
+                           </span>
+                        )}
+                     </h1>
+                     <p className="mt-2 text-gray-600">
+                        {description}
+                     </p>
+                  </div>
+
+                  {showAddButton && (
+                     <Link
+                        href="/dealer/properties/create"
+                        className="mt-4 sm:mt-0 inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                     >
+                        <FiPlus className="w-5 h-5" />
+                        Add New Property
+                     </Link>
+                  )}
+               </div>
+            )}
+
+            {/* Stats - Enhanced for "show all" case */}
+            {!isLoading && !hideStats && (
+               <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                     <div className="text-2xl font-bold text-gray-900">{totalProperties}</div>
+                     <div className="text-sm text-gray-500">Total Properties</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                     <div className="text-2xl font-bold text-gray-900">{availableCount}</div>
+                     <div className="text-sm text-gray-500">Available</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                     <div className="text-2xl font-bold text-gray-900">{forSaleCount}</div>
+                     <div className="text-sm text-gray-500">For Sale</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                     <div className="text-2xl font-bold text-gray-900">{forRentCount}</div>
+                     <div className="text-sm text-gray-500">For Rent</div>
+                  </div>
+
+                  {/* Approval Stats - Show both when displaying all properties */}
+                  {showAll && (
+                     <>
+                        <div className="bg-white rounded-lg p-4 shadow-sm border border-green-200">
+                           <div className="text-2xl font-bold text-green-600">{approvedCount}</div>
+                           <div className="text-sm text-green-600 font-medium flex items-center gap-1">
+                              <FiCheck className="w-4 h-4" />
+                              Verified
+                           </div>
+                        </div>
+                        <div className="bg-white rounded-lg p-4 shadow-sm border border-yellow-200">
+                           <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
+                           <div className="text-sm text-yellow-600 font-medium flex items-center gap-1">
+                              <FiClock className="w-4 h-4" />
+                              Pending
+                           </div>
+                        </div>
+                     </>
+                  )}
+
+                  {/* Show filtered status when not showing all */}
+                  {!showAll && (
+                     <>
+                        {showOnlyApproved && (
+                           <div className="bg-white rounded-lg p-4 shadow-sm border border-green-200 col-span-2">
+                              <div className="text-2xl font-bold text-green-600">{totalProperties}</div>
+                              <div className="text-sm text-green-600 font-medium flex items-center gap-1">
+                                 <FiCheck className="w-4 h-4" />
+                                 Verified Properties
+                              </div>
+                           </div>
+                        )}
+                        {showOnlyPending && (
+                           <div className="bg-white rounded-lg p-4 shadow-sm border border-yellow-200 col-span-2">
+                              <div className="text-2xl font-bold text-yellow-600">{totalProperties}</div>
+                              <div className="text-sm text-yellow-600 font-medium flex items-center gap-1">
+                                 <FiClock className="w-4 h-4" />
+                                 Pending Approval
+                              </div>
+                           </div>
+                        )}
+                     </>
+                  )}
+               </div>
+            )}
+
+            {/* Filters - Conditionally rendered */}
+            {!hideFilters && (
+               <PropertyFilters
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+               />
+            )}
+
+            {/* Loading State */}
+            {(isLoading || isFetching) && (
+               <div className="flex justify-center items-center py-12">
+                  <FiLoader className="w-8 h-8 text-primary-600 animate-spin" />
+                  <span className="ml-2 text-gray-600">Loading properties...</span>
+               </div>
+            )}
+
+            {/* Properties Grid */}
+            {!isLoading && !isFetching && properties.length > 0 ? (
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {properties.map(property => (
+                     <PropertyCard
+                        key={property._id}
+                        property={property}
+                        showApprovalStatus={showAll} // Show approval badge when showing all
+                     />
+                  ))}
+               </div>
+            ) : (
+               !isLoading && !isFetching && (
+                  <div className="text-center py-12">
+                     <FiHome className="mx-auto h-12 w-12 text-gray-400" />
+                     <h3 className="mt-4 text-lg font-medium text-gray-900">No properties found</h3>
+                     <p className="mt-2 text-gray-500">
+                        {showOnlyApproved && "No verified properties available."}
+                        {showOnlyPending && "No properties pending approval."}
+                        {showAll && "No properties found matching your criteria."}
+                        {!showOnlyApproved && !showOnlyPending && !showAll && "Try adjusting your search or filters to find what you're looking for."}
+                     </p>
+                  </div>
+               )
+            )}
+
+            {/* Results Count */}
+            {!isLoading && !isFetching && (
+               <div className="mt-8 text-center text-gray-500">
+                  Showing {properties.length} of {totalProperties} properties
+                  {showOnlyApproved && " (Verified Only)"}
+                  {showOnlyPending && " (Pending Approval Only)"}
+                  {showAll && " (All Properties)"}
+               </div>
+            )}
+         </div>
+      </div>
+   );
+};
+
+export default PropertiesPage;

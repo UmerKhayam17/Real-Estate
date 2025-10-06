@@ -209,8 +209,14 @@ exports.getProperties = async (req, res, next) => {
     const lng = query.lng;
     const radius = query.radius;
     const sort = query.sort;
+    const approved = query.approved; // ADD THIS LINE
 
-    const filter = {  };
+    const filter = {};
+
+    // ADD THE APPROVED FILTER
+    if (approved !== undefined) {
+      filter.approved = approved === 'true';
+    }
 
     if (q) filter.$text = { $search: q };
     if (city) filter['address.city'] = city;
@@ -244,6 +250,9 @@ exports.getProperties = async (req, res, next) => {
       .limit(limit)
       .sort(sortObj)
       .populate('agent', 'name email phone');
+
+    console.log('🔍 Backend Filter Applied:', filter); // Add this for debugging
+    console.log('🔍 Query Parameters Received:', query); // Add this for debugging
 
     res.json({
       total,
