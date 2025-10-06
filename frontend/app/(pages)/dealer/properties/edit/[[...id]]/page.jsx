@@ -12,16 +12,18 @@ import {
    PropertyDetailsSection,
    AddressSection,
    FeaturesSection,
-   MediaUploadSection
+   MediaUploadSection,
+   AdminSection
 } from '../../components/PropertyFormSections';
 import { toast } from 'react-hot-toast';
-import { isAuthenticated } from '@/lib/auth'; // Import directly from lib
+import { isAuthenticated, getUserRole } from '@/lib/auth'; // Import directly from lib
 
 const PropertyForm = () => {
    const router = useRouter();
    const params = useParams();
    const propertyId = params.id?.[0];
    const [isMounted, setIsMounted] = useState(false);
+   const [userRole, setUserRole] = useState(null);
 
    const { data: property, isLoading: propertyLoading, error } = useProperty(propertyId);
 
@@ -41,10 +43,14 @@ const PropertyForm = () => {
    } = usePropertyForm(property);
 
    const isEditMode = Boolean(propertyId);
+   const isAdmin = userRole === 'admin';
 
-   // Set mounted state to avoid hydration issues
+   // Set mounted state and user role
    useEffect(() => {
       setIsMounted(true);
+      if (isAuthenticated()) {
+         setUserRole(getUserRole());
+      }
    }, []);
 
    // Check authentication only on client side
@@ -127,15 +133,24 @@ const PropertyForm = () => {
       <div className="min-h-screen bg-gray-50 py-8">
          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-8">
-               <h1 className="text-3xl font-bold text-gray-900">
-                  {isEditMode ? 'Edit Property' : 'Add New Property'}
-               </h1>
-               <p className="mt-2 text-sm text-gray-600">
-                  {isEditMode
-                     ? 'Update the details of your property listing.'
-                     : 'Fill in the details below to list your property for sale or rent.'
-                  }
-               </p>
+               <div className="flex items-center justify-between">
+                  <div>
+                     <h1 className="text-3xl font-bold text-gray-900">
+                        {isEditMode ? 'Edit Property' : 'Add New Property'}
+                     </h1>
+                     <p className="mt-2 text-sm text-gray-600">
+                        {isEditMode
+                           ? 'Update the details of your property listing.'
+                           : 'Fill in the details below to list your property for sale or rent.'
+                        }
+                     </p>
+                  </div>
+                  {isAdmin && (
+                     <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                        Admin Mode
+                     </div>
+                  )}
+               </div>
             </div>
 
             <form onSubmit={onSubmit} className="space-y-8">
@@ -153,6 +168,7 @@ const PropertyForm = () => {
                      formData={formData}
                      handleInputChange={handleInputChange}
                      handleNumberChange={handleNumberChange}
+                     isAdmin={isAdmin}
                   />
                </div>
 
@@ -185,6 +201,17 @@ const PropertyForm = () => {
                      handleArrayChange={handleArrayChange}
                   />
                </div>
+
+               {/* Admin Section - Only show for admin users in edit mode */}
+               {isAdmin && isEditMode && (
+                  <div className="bg-white shadow rounded-lg p-6 border-l-4 border-yellow-500">
+                     <AdminSection
+                        formData={formData}
+                        handleInputChange={handleInputChange}
+                        isAdmin={isAdmin}
+                     />
+                  </div>
+               )}
 
                <div className="bg-white justify-between flex shadow rounded-lg p-6">
                   <ButtonGroup className="justify-start">

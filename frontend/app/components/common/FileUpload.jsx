@@ -168,7 +168,7 @@ const FileUpload = ({
       if (file.preview) {
          return file.preview;
       }
-      return '/api/placeholder/200/200';
+      return 'null';
    };
 
    return (
@@ -255,7 +255,6 @@ const FileUpload = ({
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
                                        console.error('Failed to load image:', safeFile.name);
-                                       e.target.src = '/api/placeholder/200/200';
                                     }}
                                  />
                               </div>

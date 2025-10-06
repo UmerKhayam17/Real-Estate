@@ -16,3 +16,20 @@ export const logout = () => {
   localStorage.removeItem('user');
   window.location.href = '/';
 };
+
+export const getUserRole = () => {
+  if (typeof window === 'undefined') return null;
+
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+
+  try {
+    // Decode the token to get user role
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    console.log("the payload is ", payload)
+    return payload.role || 'user';
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return null;
+  }
+};

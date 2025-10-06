@@ -50,6 +50,65 @@ export const FEATURE_OPTIONS = [
    { value: 'elevator', label: 'Elevator' }
 ];
 
+// Admin Section (Only visible to admin users)
+export const AdminSection = ({ formData, handleInputChange, isAdmin = false }) => {
+   if (!isAdmin) return null;
+
+   return (
+      <div className="space-y-6">
+         <h2 className="text-xl font-semibold text-gray-900">Admin Controls</h2>
+
+         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+               <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+               </div>
+               <div>
+                  <h4 className="text-sm font-medium text-yellow-800">Admin Controls</h4>
+                  <p className="text-sm text-yellow-700 mt-1">
+                     These settings are only available to administrators.
+                  </p>
+               </div>
+            </div>
+         </div>
+
+         <div className="grid grid-cols-1 gap-4">
+            <Checkbox
+               name="approved"
+               label="Approve Property Listing"
+               checked={formData.approved}
+               onChange={handleInputChange}
+               helperText="When approved, this property will be visible to all users on the platform"
+            />
+
+            {formData.approved && (
+               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                     <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                     </svg>
+                     <span className="text-sm font-medium text-green-800">Property is approved and visible to users</span>
+                  </div>
+               </div>
+            )}
+
+            {!formData.approved && (
+               <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                     <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                     </svg>
+                     <span className="text-sm font-medium text-orange-800">Property is pending approval and not visible to users</span>
+                  </div>
+               </div>
+            )}
+         </div>
+      </div>
+   );
+};
+
 // Basic Information Section
 export const BasicInformationSection = ({ formData, handleInputChange, handleNumberChange }) => (
    <div className="space-y-6">
@@ -116,7 +175,7 @@ export const BasicInformationSection = ({ formData, handleInputChange, handleNum
 );
 
 // Property Details Section
-export const PropertyDetailsSection = ({ formData, handleInputChange, handleNumberChange }) => (
+export const PropertyDetailsSection = ({ formData, handleInputChange, handleNumberChange, isAdmin = false }) => (
    <div className="space-y-6">
       <h2 className="text-xl font-semibold text-gray-900">Property Details</h2>
 
@@ -170,6 +229,21 @@ export const PropertyDetailsSection = ({ formData, handleInputChange, handleNumb
             placeholder="Number of bathrooms"
             icon="home"
          />
+
+         {/* Show views count for admin users */}
+         {isAdmin && (
+            <InputField
+               name="views"
+               label="Views"
+               type="number"
+               value={formData.views}
+               onChange={handleNumberChange}
+               placeholder="View count"
+               icon="eye"
+               disabled
+               helperText="Total views (read-only)"
+            />
+         )}
       </div>
    </div>
 );
@@ -310,7 +384,6 @@ export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia,
                               className="w-full h-24 object-cover"
                               onError={(e) => {
                                  console.error('Failed to load existing image:', media.url);
-                                 e.target.src = '/api/placeholder/200/200';
                               }}
                            />
                            {media.isMain && (
@@ -386,22 +459,57 @@ export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia,
    );
 };
 
-// Features Section
-export const FeaturesSection = ({ formData, handleArrayChange }) => (
-   <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900">Features & Amenities</h2>
+// In PropertyFormSections.js - Update FeaturesSection
+export const FeaturesSection = ({ formData, handleArrayChange }) => {
+   // Ensure features is always an array
+   const featuresValue = React.useMemo(() => {
+      if (Array.isArray(formData.features)) return formData.features;
+      if (typeof formData.features === 'string') {
+         try {
+            // Handle stringified arrays from database
+            const parsed = JSON.parse(formData.features);
+            return Array.isArray(parsed) ? parsed : [parsed];
+         } catch {
+            return [];
+         }
+      }
+      return [];
+   }, [formData.features]);
 
-      <MultiSelectField
-         name="features"
-         label="Property Features"
-         value={formData.features}
-         onChange={(e) => handleArrayChange('features', e.target.value)}
-         options={FEATURE_OPTIONS}
-         placeholder="Select features available"
-         helperText="Choose all features that apply to this property"
-      />
-   </div>
-);
+   const handleFeaturesChange = (selectedFeatures) => {
+      console.log('FeaturesSection - Raw selected features:', selectedFeatures);
 
+      // Ensure we're setting a clean array of strings
+      const cleanFeatures = Array.isArray(selectedFeatures) ? selectedFeatures : [];
 
+      console.log('FeaturesSection - Clean features to set:', cleanFeatures);
+      handleArrayChange('features', cleanFeatures);
+   };
 
+   return (
+      <div className="space-y-6">
+         <h2 className="text-xl font-semibold text-gray-900">Features & Amenities</h2>
+
+         <MultiSelectField
+            name="features"
+            label="Property Features"
+            value={featuresValue}
+            onChange={(e) => handleFeaturesChange(e.target.value)}
+            options={FEATURE_OPTIONS}
+            placeholder="Select features available"
+            helperText="Choose all features that apply to this property"
+         />
+
+         {/* Enhanced debug info */}
+         {process.env.NODE_ENV === 'development' && (
+            <div className="bg-gray-100 p-3 rounded text-xs space-y-1">
+               <p><strong>Features Debug:</strong></p>
+               <p>Raw value: {JSON.stringify(formData.features)}</p>
+               <p>Type: {typeof formData.features}</p>
+               <p>Processed value: {JSON.stringify(featuresValue)}</p>
+               <p>Is Array: {Array.isArray(formData.features).toString()}</p>
+            </div>
+         )}
+      </div>
+   );
+};

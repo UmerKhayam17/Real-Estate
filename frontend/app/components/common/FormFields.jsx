@@ -191,6 +191,7 @@ export const RadioGroup = ({
   );
 };
 
+// In FormFields.js - Update the MultiSelectField component
 export const MultiSelectField = ({
   name,
   label,
@@ -204,7 +205,24 @@ export const MultiSelectField = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const safeValue = Array.isArray(value) ? value : [];
+
+  // Ensure value is always an array
+  const safeValue = React.useMemo(() => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        // Handle stringified arrays
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        // If it's a comma-separated string
+        return value.split(',').map(v => v.trim()).filter(v => v);
+      }
+    }
+    return [];
+  }, [value]);
+
+  console.log('MultiSelectField - Current value:', safeValue, 'Type:', typeof value);
 
   const handleToggle = () => {
     if (!disabled) {
@@ -216,6 +234,8 @@ export const MultiSelectField = ({
     const newValue = safeValue.includes(optionValue)
       ? safeValue.filter(v => v !== optionValue)
       : [...safeValue, optionValue];
+
+    console.log('MultiSelectField - New value:', newValue);
 
     onChange({
       target: {
@@ -284,7 +304,7 @@ export const MultiSelectField = ({
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  checked={value.includes(option.value)}
+                  checked={safeValue.includes(option.value)}
                   readOnly
                   className="h-4 w-4 text-primary-600 border-gray-300 rounded mr-2"
                 />
@@ -313,7 +333,7 @@ export const MultiSelectField = ({
                     onChange({
                       target: {
                         name,
-                        value: value.filter(v => v !== val)
+                        value: safeValue.filter(v => v !== val)
                       }
                     });
                   }}

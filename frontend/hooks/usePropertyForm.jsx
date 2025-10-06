@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useCreateProperty, useUpdateProperty } from '@/mutations/propertyMutation';
-import  { isAuthenticated } from '@/lib/auth';
+import { isAuthenticated } from '@/lib/auth';
 import { toast } from 'react-hot-toast';
 
 export const usePropertyForm = (existingProperty = null) => {
@@ -185,6 +185,7 @@ export const usePropertyForm = (existingProperty = null) => {
    };
 
    // Submit handler for both create and update
+   // In usePropertyForm.js - Update the handleSubmit function
    const handleSubmit = async (e, propertyId = null) => {
       e.preventDefault();
 
@@ -197,6 +198,35 @@ export const usePropertyForm = (existingProperty = null) => {
       setIsSubmitting(true);
 
       try {
+         console.log('🚀 SUBMITTING PROPERTY FORM - RAW FORM DATA:', formData);
+         console.log('🚀 Features data before processing:', formData.features, 'Type:', typeof formData.features);
+
+         // FIX: Ensure features is properly formatted as an array
+         let cleanedFeatures = [];
+         if (Array.isArray(formData.features)) {
+            cleanedFeatures = formData.features;
+         } else if (typeof formData.features === 'string') {
+            try {
+               // Handle stringified arrays
+               if (formData.features.startsWith('[') && formData.features.endsWith(']')) {
+                  cleanedFeatures = JSON.parse(formData.features);
+               } else {
+                  // Handle comma-separated strings
+                  cleanedFeatures = formData.features.split(',').map(f => f.trim()).filter(f => f);
+               }
+            } catch (error) {
+               console.error('Error parsing features:', error);
+               cleanedFeatures = [];
+            }
+         }
+
+         // Final cleanup - ensure all features are strings
+         cleanedFeatures = cleanedFeatures
+            .filter(feature => feature && typeof feature === 'string')
+            .map(feature => feature.trim());
+
+         console.log('✅ Cleaned features for submission:', cleanedFeatures);
+
          // Prepare the data for API
          const submitData = {
             title: formData.title,
@@ -220,9 +250,13 @@ export const usePropertyForm = (existingProperty = null) => {
                type: 'Point',
                coordinates: formData.location.coordinates.map(coord => Number(coord) || 0)
             },
-            features: formData.features,
-            media: formData.media // Include media metadata
+            features: cleanedFeatures, // Use the cleaned features
+            media: formData.media,
+            approved: formData.approved
          };
+
+         console.log('📦 Prepared submit data:', submitData);
+         console.log('📦 Features in submit data:', submitData.features, 'Type:', typeof submitData.features);
 
          // For updates, include media to delete
          if (propertyId && mediaToDelete.length > 0) {
@@ -238,6 +272,9 @@ export const usePropertyForm = (existingProperty = null) => {
          } else {
             result = await createPropertyMutation.mutateAsync(submitData);
          }
+
+         console.log('✅ PROPERTY SUBMISSION SUCCESS:', result);
+         console.log('✅ Features in response:', result.features);
 
          // Clear media to delete after successful update
          if (propertyId) {

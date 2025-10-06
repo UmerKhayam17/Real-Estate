@@ -50,12 +50,16 @@ export const useCreateProperty = () => {
 };
 
 // Update property mutation
+// mutations/propertyMutation.js - FIXED VERSION
 export const useUpdateProperty = () => {
    const queryClient = useQueryClient();
 
    return useMutation({
       mutationFn: async ({ id, propertyData }) => {
          const formData = new FormData();
+
+         console.log('📤 UPDATE MUTATION - Raw propertyData:', propertyData);
+         console.log('📤 UPDATE MUTATION - Features before processing:', propertyData.features);
 
          // Append all basic fields
          Object.keys(propertyData).forEach(key => {
@@ -66,11 +70,24 @@ export const useUpdateProperty = () => {
             } else if (key === 'address') {
                formData.append('address', JSON.stringify(propertyData[key]));
             } else if (key === 'features') {
-               formData.append('features', JSON.stringify(propertyData[key]));
+               // FIX: Don't stringify features here - send as array
+               // The FormData will handle arrays properly
+               if (Array.isArray(propertyData[key])) {
+                  propertyData[key].forEach(feature => {
+                     formData.append('features[]', feature);
+                  });
+               } else if (propertyData[key]) {
+                  formData.append('features[]', propertyData[key]);
+               }
             } else if (propertyData[key] !== null && propertyData[key] !== undefined) {
                formData.append(key, propertyData[key]);
             }
          });
+
+         console.log('📤 UPDATE MUTATION - FormData entries:');
+         for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}:`, value);
+         }
 
          // Handle media for update - different approach than create
          if (propertyData.media && propertyData.media.length > 0) {
@@ -113,7 +130,6 @@ export const useUpdateProperty = () => {
       },
    });
 };
-
 // Delete property mutation
 export const useDeleteProperty = () => {
    const queryClient = useQueryClient();
