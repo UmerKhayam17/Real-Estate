@@ -2,17 +2,31 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api, { getAuthHeaders } from "@/lib/axios";
 
+// mutations/propertyMutation.js - Also fix create mutation
 export const useCreateProperty = () => {
    const queryClient = useQueryClient();
 
    return useMutation({
       mutationFn: async (propertyData) => {
+         console.log('📤 CREATE MUTATION - Raw propertyData:', propertyData);
+         console.log('📤 CREATE MUTATION - Features before processing:', propertyData.features);
+
          const formData = new FormData();
 
          Object.keys(propertyData).forEach(key => {
             if (key === 'media') return;
+
             if (key === 'location') {
                formData.append('location', propertyData[key].coordinates.join(','));
+            } else if (key === 'features') {
+               // FIX: Don't stringify features - send as array
+               if (Array.isArray(propertyData[key])) {
+                  propertyData[key].forEach(feature => {
+                     formData.append('features[]', feature);
+                  });
+               } else if (propertyData[key]) {
+                  formData.append('features[]', propertyData[key]);
+               }
             } else if (typeof propertyData[key] === 'object') {
                Object.keys(propertyData[key]).forEach(nestedKey => {
                   const value = propertyData[key][nestedKey];
@@ -24,6 +38,11 @@ export const useCreateProperty = () => {
                formData.append(key, propertyData[key]);
             }
          });
+
+         console.log('📤 CREATE MUTATION - FormData entries:');
+         for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}:`, value);
+         }
 
          if (propertyData.media && propertyData.media.length > 0) {
             propertyData.media.forEach((mediaItem) => {

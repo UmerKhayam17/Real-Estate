@@ -460,30 +460,36 @@ export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia,
 };
 
 // In PropertyFormSections.js - Update FeaturesSection
+// In PropertyFormSections.js - Update FeaturesSection to handle stringified data
 export const FeaturesSection = ({ formData, handleArrayChange }) => {
-   // Ensure features is always an array
+   // Enhanced feature value parsing
    const featuresValue = React.useMemo(() => {
-      if (Array.isArray(formData.features)) return formData.features;
+      if (Array.isArray(formData.features)) {
+         return formData.features;
+      }
+
       if (typeof formData.features === 'string') {
          try {
-            // Handle stringified arrays from database
-            const parsed = JSON.parse(formData.features);
-            return Array.isArray(parsed) ? parsed : [parsed];
-         } catch {
+            // Handle stringified arrays from database response
+            if (formData.features.startsWith('[') && formData.features.endsWith(']')) {
+               const parsed = JSON.parse(formData.features);
+               return Array.isArray(parsed) ? parsed : [parsed];
+            } else {
+               // Handle comma-separated string
+               return formData.features.split(',').map(f => f.trim()).filter(f => f);
+            }
+         } catch (error) {
+            console.error('Error parsing features:', error);
             return [];
          }
       }
+
       return [];
    }, [formData.features]);
 
    const handleFeaturesChange = (selectedFeatures) => {
-      console.log('FeaturesSection - Raw selected features:', selectedFeatures);
-
-      // Ensure we're setting a clean array of strings
-      const cleanFeatures = Array.isArray(selectedFeatures) ? selectedFeatures : [];
-
-      console.log('FeaturesSection - Clean features to set:', cleanFeatures);
-      handleArrayChange('features', cleanFeatures);
+      console.log('FeaturesSection - Setting features:', selectedFeatures);
+      handleArrayChange('features', selectedFeatures);
    };
 
    return (
@@ -504,9 +510,9 @@ export const FeaturesSection = ({ formData, handleArrayChange }) => {
          {process.env.NODE_ENV === 'development' && (
             <div className="bg-gray-100 p-3 rounded text-xs space-y-1">
                <p><strong>Features Debug:</strong></p>
-               <p>Raw value: {JSON.stringify(formData.features)}</p>
-               <p>Type: {typeof formData.features}</p>
-               <p>Processed value: {JSON.stringify(featuresValue)}</p>
+               <p>Raw formData.features: {JSON.stringify(formData.features)}</p>
+               <p>Processed featuresValue: {JSON.stringify(featuresValue)}</p>
+               <p>Raw type: {typeof formData.features}</p>
                <p>Is Array: {Array.isArray(formData.features).toString()}</p>
             </div>
          )}
