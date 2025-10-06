@@ -47,7 +47,6 @@ export const usePropertyForm = (existingProperty = null) => {
    // Populate form when existingProperty changes
    useEffect(() => {
       if (existingProperty) {
-         console.log('📝 POPULATING FORM WITH EXISTING PROPERTY:', existingProperty);
          setFormData({
             title: existingProperty.title || '',
             description: existingProperty.description || '',
@@ -198,8 +197,6 @@ export const usePropertyForm = (existingProperty = null) => {
       setIsSubmitting(true);
 
       try {
-         console.log('📝 FORM DATA TO BE SENT:', formData);
-
          // Prepare the data for API
          const submitData = {
             title: formData.title,
@@ -232,8 +229,6 @@ export const usePropertyForm = (existingProperty = null) => {
             submitData.mediaIdsToDelete = mediaToDelete;
          }
 
-         console.log('🚀 FINAL DATA SENT TO API:', submitData);
-
          let result;
          if (propertyId) {
             result = await updatePropertyMutation.mutateAsync({
@@ -243,8 +238,6 @@ export const usePropertyForm = (existingProperty = null) => {
          } else {
             result = await createPropertyMutation.mutateAsync(submitData);
          }
-
-         console.log('✅ API RESPONSE:', result);
 
          // Clear media to delete after successful update
          if (propertyId) {

@@ -7,7 +7,7 @@ const AllProperties = () => {
       showAll={true} 
       title="All Properties"
       description="Manage all properties in the system"
-      showAddButton={false} 
+      showAddButton={true} 
       showEditButton={true}
     />
   );
