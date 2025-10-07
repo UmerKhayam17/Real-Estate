@@ -68,8 +68,7 @@ export const useCreateProperty = () => {
    });
 };
 
-// mutations/propertyMutation.js - FIXED UPDATE MUTATION
-// mutations/propertyMutation.js - FIXED VERSION
+// mutations/propertyMutation.js - Update the useUpdateProperty mutation
 export const useUpdateProperty = () => {
    const queryClient = useQueryClient();
 
@@ -78,6 +77,8 @@ export const useUpdateProperty = () => {
          const formData = new FormData();
 
          console.log('📤 UPDATE MUTATION - Raw propertyData:', propertyData);
+         console.log('📤 UPDATE MUTATION - Location data:', propertyData.location);
+         console.log('📤 UPDATE MUTATION - Approved status:', propertyData.approved);
 
          // Append all basic fields
          Object.keys(propertyData).forEach(key => {
@@ -85,7 +86,14 @@ export const useUpdateProperty = () => {
             if (key === 'mediaIdsToDelete') return; // Handle deletions separately
 
             if (key === 'location') {
-               formData.append('location', JSON.stringify(propertyData[key]));
+               // FIX: Ensure location is properly stringified
+               const locationData = {
+                  type: 'Point',
+                  coordinates: propertyData[key].coordinates.map(coord =>
+                     parseFloat(coord) || 0
+                  )
+               };
+               formData.append('location', JSON.stringify(locationData));
             } else if (key === 'address') {
                formData.append('address', JSON.stringify(propertyData[key]));
             } else if (key === 'features') {
@@ -98,17 +106,17 @@ export const useUpdateProperty = () => {
                   formData.append('features[]', propertyData[key]);
                }
             } else if (propertyData[key] !== null && propertyData[key] !== undefined) {
+               // FIX: Include approved field and other fields
                formData.append(key, propertyData[key]);
             }
          });
 
-         // FIX: Use 'media' field name for new file uploads (what backend expects)
+         // Handle media
          if (propertyData.media && propertyData.media.length > 0) {
-            // Separate existing media (with _id) from new uploads (with file)
             const existingMedia = propertyData.media.filter(media => media._id && !media.file);
             const newMedia = propertyData.media.filter(media => media.file instanceof File);
 
-            // Send existing media metadata as JSON
+            // Send existing media metadata
             if (existingMedia.length > 0) {
                const existingMediaMetadata = existingMedia.map(mediaItem => ({
                   _id: mediaItem._id,
@@ -120,10 +128,10 @@ export const useUpdateProperty = () => {
                formData.append('existingMedia', JSON.stringify(existingMediaMetadata));
             }
 
-            // FIX: Use 'media' field name for new files (what Multer expects)
+            // Append new files
             if (newMedia.length > 0) {
                newMedia.forEach((mediaItem) => {
-                  formData.append('media', mediaItem.file); // Use 'media' instead of 'newMedia'
+                  formData.append('media', mediaItem.file);
                });
             }
          }
@@ -131,7 +139,12 @@ export const useUpdateProperty = () => {
          // Handle media deletions
          if (propertyData.mediaIdsToDelete && propertyData.mediaIdsToDelete.length > 0) {
             formData.append('mediaIdsToDelete', JSON.stringify(propertyData.mediaIdsToDelete));
-            console.log('📤 UPDATE MUTATION - Media to delete:', propertyData.mediaIdsToDelete);
+         }
+
+         // Debug: Log all formData entries
+         console.log('📤 UPDATE MUTATION - FormData entries:');
+         for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}:`, value);
          }
 
          const authHeaders = getAuthHeaders();
