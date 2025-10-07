@@ -185,7 +185,6 @@ export const usePropertyForm = (existingProperty = null) => {
    };
 
    // Submit handler for both create and update
-   // In usePropertyForm.js - Update the handleSubmit function
    const handleSubmit = async (e, propertyId = null) => {
       e.preventDefault();
 
@@ -199,9 +198,7 @@ export const usePropertyForm = (existingProperty = null) => {
 
       try {
          console.log('🚀 SUBMITTING PROPERTY FORM - RAW FORM DATA:', formData);
-         console.log('🚀 Features data before processing:', formData.features, 'Type:', typeof formData.features);
-
-         // FIX: Ensure features is properly formatted as an array
+        
          let cleanedFeatures = [];
          if (Array.isArray(formData.features)) {
             cleanedFeatures = formData.features;
@@ -256,7 +253,6 @@ export const usePropertyForm = (existingProperty = null) => {
          };
 
          console.log('📦 Prepared submit data:', submitData);
-         console.log('📦 Features in submit data:', submitData.features, 'Type:', typeof submitData.features);
 
          // For updates, include media to delete
          if (propertyId && mediaToDelete.length > 0) {
@@ -274,7 +270,6 @@ export const usePropertyForm = (existingProperty = null) => {
          }
 
          console.log('✅ PROPERTY SUBMISSION SUCCESS:', result);
-         console.log('✅ Features in response:', result.features);
 
          // Clear media to delete after successful update
          if (propertyId) {

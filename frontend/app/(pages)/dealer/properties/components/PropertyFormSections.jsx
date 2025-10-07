@@ -307,8 +307,11 @@ export const AddressSection = ({ formData, handleInputChange }) => (
 );
 
 // Media Upload Section
+// In PropertyFormSections.js - Update MediaUploadSection
 export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia, onSetMainMedia }) => {
    const handleFilesChange = (newFiles) => {
+      console.log('📤 New files to add:', newFiles);
+
       const mediaItems = newFiles.map(fileItem => ({
          file: fileItem.file,
          preview: fileItem.preview,
@@ -318,39 +321,46 @@ export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia,
                fileItem.name?.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? 'image' :
                   fileItem.name?.match(/\.(mp4|mov|avi|wmv|flv|webm|mkv)$/i) ? 'video' : 'unknown',
          size: fileItem.size,
-         isMain: formData.media.length === 0 && newFiles.length === 1,
+         isMain: formData.media.filter(m => !m.file).length === 0 && newFiles.length === 1, // Only set as main if no existing non-file media
          caption: ''
       }));
 
-      handleArrayChange('media', [...formData.media, ...mediaItems]);
+      // Only add new files, don't include existing media in FileUpload
+      const existingMedia = formData.media.filter(media => media._id || !media.file);
+      const updatedMedia = [...existingMedia, ...mediaItems];
+
+      handleArrayChange('media', updatedMedia);
    };
 
    const handleDelete = (index, mediaId) => {
+
       if (mediaId && onDeleteMedia) {
-         // Existing media with ID
+         // Existing media with ID - call the deletion handler
          onDeleteMedia(mediaId);
       } else {
-         // Newly uploaded media without ID
+         // Newly uploaded media without ID - just remove from array
          const updatedMedia = formData.media.filter((_, i) => i !== index);
+
          handleArrayChange('media', updatedMedia);
       }
    };
 
    const handleSetMain = (index, mediaId) => {
-      if (onSetMainMedia) {
+
+      if (onSetMainMedia && mediaId) {
          onSetMainMedia(mediaId);
       } else {
          const updatedMedia = formData.media.map((media, i) => ({
             ...media,
             isMain: i === index
          }));
+
          handleArrayChange('media', updatedMedia);
       }
    };
 
    const mediaValue = Array.isArray(formData.media) ? formData.media : [];
 
-   // Separate existing media (with _id) from new uploads (with file object)
    const existingMedia = mediaValue.filter(media => media._id);
    const newMedia = mediaValue.filter(media => !media._id && media.file);
 
@@ -358,13 +368,14 @@ export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia,
       <div className="space-y-6">
          <h2 className="text-xl font-semibold text-gray-900">Media Upload</h2>
 
+         {/* FileUpload should only handle NEW files */}
          <FileUpload
-            label="Property Images & Videos"
-            value={mediaValue}
+            label="Upload New Images & Videos"
+            value={newMedia} // Only pass new files to FileUpload
             onChange={handleFilesChange}
             onDelete={handleDelete}
             onSetMain={handleSetMain}
-            helperText="Upload images and videos of your property. First image will be used as cover."
+            helperText="Upload new images and videos. They will be added to your existing media."
             maxSize={20 * 1024 * 1024} // 20MB
             className="md:col-span-2"
          />
@@ -417,7 +428,7 @@ export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia,
          {/* Show newly uploaded media previews */}
          {newMedia.length > 0 && (
             <div className="mt-4">
-               <h4 className="font-medium mb-2">New Uploads</h4>
+               <h4 className="font-medium mb-2">New Uploads (Not Saved Yet)</h4>
                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {newMedia.map((media, index) => {
                      const mediaIndex = mediaValue.findIndex(m => m.file === media.file);
@@ -438,8 +449,9 @@ export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia,
                                  type="button"
                                  onClick={() => handleSetMain(mediaIndex)}
                                  className="bg-white text-gray-800 p-1 rounded mr-1 text-xs"
+                                 disabled={media.isMain}
                               >
-                                 Set Main
+                                 {media.isMain ? 'Main' : 'Set Main'}
                               </button>
                               <button
                                  type="button"
@@ -455,12 +467,22 @@ export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia,
                </div>
             </div>
          )}
+
+         {/* Debug info */}
+         {process.env.NODE_ENV === 'development' && (
+            <div className="bg-gray-100 p-3 rounded text-xs">
+               <p><strong>Media Debug:</strong></p>
+               <p>Total media in formData: {mediaValue.length}</p>
+               <p>Existing (from DB): {existingMedia.length}</p>
+               <p>New (uploads): {newMedia.length}</p>
+               <p>Main image: {mediaValue.find(m => m.isMain)?.url || 'None'}</p>
+            </div>
+         )}
       </div>
    );
 };
 
 // In PropertyFormSections.js - Update FeaturesSection
-// In PropertyFormSections.js - Update FeaturesSection to handle stringified data
 export const FeaturesSection = ({ formData, handleArrayChange }) => {
    // Enhanced feature value parsing
    const featuresValue = React.useMemo(() => {
@@ -505,17 +527,7 @@ export const FeaturesSection = ({ formData, handleArrayChange }) => {
             placeholder="Select features available"
             helperText="Choose all features that apply to this property"
          />
-
-         {/* Enhanced debug info */}
-         {process.env.NODE_ENV === 'development' && (
-            <div className="bg-gray-100 p-3 rounded text-xs space-y-1">
-               <p><strong>Features Debug:</strong></p>
-               <p>Raw formData.features: {JSON.stringify(formData.features)}</p>
-               <p>Processed featuresValue: {JSON.stringify(featuresValue)}</p>
-               <p>Raw type: {typeof formData.features}</p>
-               <p>Is Array: {Array.isArray(formData.features).toString()}</p>
-            </div>
-         )}
+        
       </div>
    );
 };

@@ -26,7 +26,6 @@ export const getUserRole = () => {
   try {
     // Decode the token to get user role
     const payload = JSON.parse(atob(token.split('.')[1]));
-    console.log("the payload is ", payload)
     return payload.role || 'user';
   } catch (error) {
     console.error('Error decoding token:', error);

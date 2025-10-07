@@ -174,7 +174,7 @@ const FileUpload = ({
    return (
       <div className={`space-y-4 ${className}`}>
          <label className="block text-sm font-medium text-gray-700">
-            {label}
+            {label} {value.length > 0 && `(${value.length} new files)`}
          </label>
 
          {/* Drop Zone */}
@@ -224,7 +224,7 @@ const FileUpload = ({
          {value.length > 0 && (
             <div className="space-y-3">
                <h4 className="text-sm font-medium text-gray-700">
-                  Selected Files ({value.length})
+                  New Files to Upload ({value.length})
                </h4>
 
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

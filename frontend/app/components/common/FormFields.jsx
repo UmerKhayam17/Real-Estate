@@ -222,8 +222,6 @@ export const MultiSelectField = ({
     return [];
   }, [value]);
 
-  console.log('MultiSelectField - Current value:', safeValue, 'Type:', typeof value);
-
   const handleToggle = () => {
     if (!disabled) {
       setIsOpen(!isOpen);

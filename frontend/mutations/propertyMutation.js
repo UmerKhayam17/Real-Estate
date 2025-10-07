@@ -68,7 +68,7 @@ export const useCreateProperty = () => {
    });
 };
 
-// Update property mutation
+// mutations/propertyMutation.js - FIXED UPDATE MUTATION
 // mutations/propertyMutation.js - FIXED VERSION
 export const useUpdateProperty = () => {
    const queryClient = useQueryClient();
@@ -78,19 +78,18 @@ export const useUpdateProperty = () => {
          const formData = new FormData();
 
          console.log('📤 UPDATE MUTATION - Raw propertyData:', propertyData);
-         console.log('📤 UPDATE MUTATION - Features before processing:', propertyData.features);
 
          // Append all basic fields
          Object.keys(propertyData).forEach(key => {
             if (key === 'media') return; // Handle media separately
+            if (key === 'mediaIdsToDelete') return; // Handle deletions separately
 
             if (key === 'location') {
                formData.append('location', JSON.stringify(propertyData[key]));
             } else if (key === 'address') {
                formData.append('address', JSON.stringify(propertyData[key]));
             } else if (key === 'features') {
-               // FIX: Don't stringify features here - send as array
-               // The FormData will handle arrays properly
+               // Send features as array
                if (Array.isArray(propertyData[key])) {
                   propertyData[key].forEach(feature => {
                      formData.append('features[]', feature);
@@ -103,34 +102,36 @@ export const useUpdateProperty = () => {
             }
          });
 
-         console.log('📤 UPDATE MUTATION - FormData entries:');
-         for (let [key, value] of formData.entries()) {
-            console.log(`  ${key}:`, value);
-         }
-
-         // Handle media for update - different approach than create
+         // FIX: Use 'media' field name for new file uploads (what backend expects)
          if (propertyData.media && propertyData.media.length > 0) {
-            // Send media metadata as JSON string
-            const mediaMetadata = propertyData.media.map(mediaItem => ({
-               _id: mediaItem._id, // For existing media
-               type: mediaItem.type,
-               isMain: mediaItem.isMain || false,
-               caption: mediaItem.caption || '',
-               // Don't send file data here, only metadata
-            }));
-            formData.append('media', JSON.stringify(mediaMetadata));
+            // Separate existing media (with _id) from new uploads (with file)
+            const existingMedia = propertyData.media.filter(media => media._id && !media.file);
+            const newMedia = propertyData.media.filter(media => media.file instanceof File);
 
-            // Append new files separately
-            propertyData.media.forEach((mediaItem) => {
-               if (mediaItem.file instanceof File) {
-                  formData.append('media', mediaItem.file); // This will be handled as new upload
-               }
-            });
+            // Send existing media metadata as JSON
+            if (existingMedia.length > 0) {
+               const existingMediaMetadata = existingMedia.map(mediaItem => ({
+                  _id: mediaItem._id,
+                  url: mediaItem.url,
+                  type: mediaItem.type,
+                  isMain: mediaItem.isMain || false,
+                  caption: mediaItem.caption || '',
+               }));
+               formData.append('existingMedia', JSON.stringify(existingMediaMetadata));
+            }
+
+            // FIX: Use 'media' field name for new files (what Multer expects)
+            if (newMedia.length > 0) {
+               newMedia.forEach((mediaItem) => {
+                  formData.append('media', mediaItem.file); // Use 'media' instead of 'newMedia'
+               });
+            }
          }
 
          // Handle media deletions
          if (propertyData.mediaIdsToDelete && propertyData.mediaIdsToDelete.length > 0) {
             formData.append('mediaIdsToDelete', JSON.stringify(propertyData.mediaIdsToDelete));
+            console.log('📤 UPDATE MUTATION - Media to delete:', propertyData.mediaIdsToDelete);
          }
 
          const authHeaders = getAuthHeaders();
@@ -149,6 +150,7 @@ export const useUpdateProperty = () => {
       },
    });
 };
+
 // Delete property mutation
 export const useDeleteProperty = () => {
    const queryClient = useQueryClient();
@@ -165,3 +167,4 @@ export const useDeleteProperty = () => {
       },
    });
 };
+  

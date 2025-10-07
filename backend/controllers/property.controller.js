@@ -114,6 +114,7 @@ exports.getProperty = async (req, res, next) => {
 };
 
 // UPDATE property
+// backend/controllers/property.controller.js - UPDATE the updateProperty function
 exports.updateProperty = async (req, res, next) => {
   try {
     const property = await Property.findById(req.params.id);
@@ -127,25 +128,12 @@ exports.updateProperty = async (req, res, next) => {
     console.log('🔄 Update request body:', req.body);
     console.log('🔄 Update files:', req.files);
 
-    // Update basic fields
-    const updateData = { ...req.body };
-
-    // Handle location update
-    if (req.body.location && req.body.location.coordinates) {
-      property.location = {
-        type: 'Point',
-        coordinates: req.body.location.coordinates.map(coord => parseFloat(coord))
-      };
-    }
-
-    // Update address if provided
-    if (req.body.address) {
-      property.address = { ...property.address, ...req.body.address };
-    }
-
-    // Update other fields
-    const fieldsToUpdate = ['title', 'description', 'price', 'currency', 'type',
-      'saleOrRent', 'status', 'bedrooms', 'bathrooms', 'area', 'features'];
+    // Update basic fields - FIX: Include approved field
+    const fieldsToUpdate = [
+      'title', 'description', 'price', 'currency', 'type',
+      'saleOrRent', 'status', 'bedrooms', 'bathrooms', 'area',
+      'features', 'approved' // ADD approved to fields that can be updated
+    ];
 
     fieldsToUpdate.forEach(field => {
       if (req.body[field] !== undefined) {
@@ -153,25 +141,67 @@ exports.updateProperty = async (req, res, next) => {
       }
     });
 
-    // Handle media updates - this is the key part
-    if (req.body.media && typeof req.body.media === 'string') {
+    // FIX: Handle location update properly
+    if (req.body.location) {
       try {
-        const mediaUpdates = JSON.parse(req.body.media);
+        let locationData = req.body.location;
 
-        // Update existing media metadata (captions, isMain, etc.)
-        mediaUpdates.forEach(mediaUpdate => {
+        // If location is a string, parse it
+        if (typeof locationData === 'string') {
+          locationData = JSON.parse(locationData);
+        }
+
+        // Ensure coordinates are properly formatted
+        if (locationData.coordinates && Array.isArray(locationData.coordinates)) {
+          property.location = {
+            type: 'Point',
+            coordinates: locationData.coordinates.map(coord => {
+              const num = parseFloat(coord);
+              return isNaN(num) ? 0 : num;
+            })
+          };
+          console.log('📍 Updated location coordinates:', property.location.coordinates);
+        }
+      } catch (error) {
+        console.error('Error parsing location:', error);
+      }
+    }
+
+    // Update address if provided
+    if (req.body.address) {
+      let addressData = req.body.address;
+
+      // If address is a string, parse it
+      if (typeof addressData === 'string') {
+        try {
+          addressData = JSON.parse(addressData);
+        } catch (error) {
+          console.error('Error parsing address:', error);
+        }
+      }
+
+      property.address = { ...property.address, ...addressData };
+    }
+
+    // Handle existing media metadata
+    if (req.body.existingMedia) {
+      try {
+        const existingMediaUpdates = JSON.parse(req.body.existingMedia);
+
+        // Update existing media items
+        existingMediaUpdates.forEach(mediaUpdate => {
           if (mediaUpdate._id) {
-            // Update existing media item
             const existingMedia = property.media.id(mediaUpdate._id);
             if (existingMedia) {
-              if (mediaUpdate.caption !== undefined) existingMedia.caption = mediaUpdate.caption;
+              // Update metadata
               if (mediaUpdate.isMain !== undefined) existingMedia.isMain = mediaUpdate.isMain;
+              if (mediaUpdate.caption !== undefined) existingMedia.caption = mediaUpdate.caption;
             }
           }
         });
 
         // Handle main image changes
-        const newMainMedia = mediaUpdates.find(media => media.isMain);
+        const newMainMedia = existingMediaUpdates.find(media => media.isMain);
         if (newMainMedia && newMainMedia._id) {
           // Reset all main flags
           property.media.forEach(media => {
@@ -184,7 +214,7 @@ exports.updateProperty = async (req, res, next) => {
           }
         }
       } catch (error) {
-        console.error('Error parsing media updates:', error);
+        console.error('Error parsing existing media updates:', error);
       }
     }
 
@@ -200,7 +230,7 @@ exports.updateProperty = async (req, res, next) => {
       property.media.push(...newMedia);
     }
 
-    // Handle media deletions if mediaIdsToDelete is provided
+    // Handle media deletions
     if (req.body.mediaIdsToDelete) {
       const mediaIdsToDelete = Array.isArray(req.body.mediaIdsToDelete)
         ? req.body.mediaIdsToDelete
@@ -210,7 +240,7 @@ exports.updateProperty = async (req, res, next) => {
         const mediaToDelete = property.media.id(mediaId);
         if (mediaToDelete) {
           // Delete file from filesystem
-          const filePath = mediaToDelete.url.replace('/uploads/', 'uploads/');
+          const filePath = path.join('uploads', mediaToDelete.url.replace('/uploads/', ''));
           if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
           }
@@ -226,11 +256,20 @@ exports.updateProperty = async (req, res, next) => {
     }
 
     await property.save();
+
+    // Log the final state for debugging
+    console.log('✅ Final property state:', {
+      approved: property.approved,
+      location: property.location,
+      features: property.features
+    });
+
     res.json(property);
   } catch (err) {
     // Cleanup uploaded files if error occurs
-    if (req.files && req.files.length) {
-      req.files.forEach(file => {
+    if (req.files) {
+      const allFiles = Object.values(req.files).flat();
+      allFiles.forEach(file => {
         if (fs.existsSync(file.path)) {
           fs.unlinkSync(file.path);
         }
@@ -239,7 +278,6 @@ exports.updateProperty = async (req, res, next) => {
     next(err);
   }
 };
-
 // DELETE property
 exports.deleteProperty = async (req, res, next) => {
   try {
