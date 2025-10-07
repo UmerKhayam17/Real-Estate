@@ -18,7 +18,8 @@ const PropertiesPage = ({
    hideStats = false,
    title = "Properties",
    description = "Browse through our collection of premium properties",
-   showAddButton = true
+   showAddButton = true,
+   showEditButton = false // New prop to control edit button visibility
 }) => {
    const [searchQuery, setSearchQuery] = useState('');
    const [filters, setFilters] = useState({
@@ -53,7 +54,7 @@ const PropertiesPage = ({
       }
       // If showAll is true, don't apply any approval filter (show everything)
 
-      console.log('🔍 API FILTERS SENT:', apiFilter);
+      // console.log('🔍 API FILTERS SENT:', apiFilter);
       return apiFilter;
    }, [searchQuery, filters, showOnlyApproved, showOnlyPending, showAll]);
 
@@ -77,12 +78,12 @@ const PropertiesPage = ({
    // Log API response
    React.useEffect(() => {
       if (propertiesData) {
-         console.log('🏠 PROPERTIES RECEIVED:', properties);
-         console.log('🔍 Approval stats:', {
-            approved: approvedCount,
-            pending: pendingCount,
-            total: totalProperties
-         });
+         // console.log('🏠 PROPERTIES RECEIVED:', properties);
+         // console.log('🔍 Approval stats:', {
+         //    approved: approvedCount,
+         //    pending: pendingCount,
+         //    total: totalProperties
+         // });
       }
    }, [propertiesData, properties, approvedCount, pendingCount, totalProperties]);
 
@@ -236,7 +237,8 @@ const PropertiesPage = ({
                      <PropertyCard
                         key={property._id}
                         property={property}
-                        showApprovalStatus={showAll} // Show approval badge when showing all
+                        showApprovalStatus={showAll} 
+                        showEditButton={showEditButton} 
                      />
                   ))}
                </div>

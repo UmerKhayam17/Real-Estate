@@ -2,17 +2,31 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api, { getAuthHeaders } from "@/lib/axios";
 
+// mutations/propertyMutation.js - Also fix create mutation
 export const useCreateProperty = () => {
    const queryClient = useQueryClient();
 
    return useMutation({
       mutationFn: async (propertyData) => {
+         console.log('📤 CREATE MUTATION - Raw propertyData:', propertyData);
+         console.log('📤 CREATE MUTATION - Features before processing:', propertyData.features);
+
          const formData = new FormData();
 
          Object.keys(propertyData).forEach(key => {
             if (key === 'media') return;
+
             if (key === 'location') {
                formData.append('location', propertyData[key].coordinates.join(','));
+            } else if (key === 'features') {
+               // FIX: Don't stringify features - send as array
+               if (Array.isArray(propertyData[key])) {
+                  propertyData[key].forEach(feature => {
+                     formData.append('features[]', feature);
+                  });
+               } else if (propertyData[key]) {
+                  formData.append('features[]', propertyData[key]);
+               }
             } else if (typeof propertyData[key] === 'object') {
                Object.keys(propertyData[key]).forEach(nestedKey => {
                   const value = propertyData[key][nestedKey];
@@ -24,6 +38,11 @@ export const useCreateProperty = () => {
                formData.append(key, propertyData[key]);
             }
          });
+
+         console.log('📤 CREATE MUTATION - FormData entries:');
+         for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}:`, value);
+         }
 
          if (propertyData.media && propertyData.media.length > 0) {
             propertyData.media.forEach((mediaItem) => {
@@ -48,13 +67,93 @@ export const useCreateProperty = () => {
       },
    });
 };
-// Update property mutation
+
+// mutations/propertyMutation.js - Update the useUpdateProperty mutation
 export const useUpdateProperty = () => {
    const queryClient = useQueryClient();
 
    return useMutation({
-      mutationFn: async ({ id, ...updateData }) => {
-         const { data } = await api.put(`/properties/${id}`, updateData);
+      mutationFn: async ({ id, propertyData }) => {
+         const formData = new FormData();
+
+         console.log('📤 UPDATE MUTATION - Raw propertyData:', propertyData);
+         console.log('📤 UPDATE MUTATION - Location data:', propertyData.location);
+         console.log('📤 UPDATE MUTATION - Approved status:', propertyData.approved);
+
+         // Append all basic fields
+         Object.keys(propertyData).forEach(key => {
+            if (key === 'media') return; // Handle media separately
+            if (key === 'mediaIdsToDelete') return; // Handle deletions separately
+
+            if (key === 'location') {
+               // FIX: Ensure location is properly stringified
+               const locationData = {
+                  type: 'Point',
+                  coordinates: propertyData[key].coordinates.map(coord =>
+                     parseFloat(coord) || 0
+                  )
+               };
+               formData.append('location', JSON.stringify(locationData));
+            } else if (key === 'address') {
+               formData.append('address', JSON.stringify(propertyData[key]));
+            } else if (key === 'features') {
+               // Send features as array
+               if (Array.isArray(propertyData[key])) {
+                  propertyData[key].forEach(feature => {
+                     formData.append('features[]', feature);
+                  });
+               } else if (propertyData[key]) {
+                  formData.append('features[]', propertyData[key]);
+               }
+            } else if (propertyData[key] !== null && propertyData[key] !== undefined) {
+               // FIX: Include approved field and other fields
+               formData.append(key, propertyData[key]);
+            }
+         });
+
+         // Handle media
+         if (propertyData.media && propertyData.media.length > 0) {
+            const existingMedia = propertyData.media.filter(media => media._id && !media.file);
+            const newMedia = propertyData.media.filter(media => media.file instanceof File);
+
+            // Send existing media metadata
+            if (existingMedia.length > 0) {
+               const existingMediaMetadata = existingMedia.map(mediaItem => ({
+                  _id: mediaItem._id,
+                  url: mediaItem.url,
+                  type: mediaItem.type,
+                  isMain: mediaItem.isMain || false,
+                  caption: mediaItem.caption || '',
+               }));
+               formData.append('existingMedia', JSON.stringify(existingMediaMetadata));
+            }
+
+            // Append new files
+            if (newMedia.length > 0) {
+               newMedia.forEach((mediaItem) => {
+                  formData.append('media', mediaItem.file);
+               });
+            }
+         }
+
+         // Handle media deletions
+         if (propertyData.mediaIdsToDelete && propertyData.mediaIdsToDelete.length > 0) {
+            formData.append('mediaIdsToDelete', JSON.stringify(propertyData.mediaIdsToDelete));
+         }
+
+         // Debug: Log all formData entries
+         console.log('📤 UPDATE MUTATION - FormData entries:');
+         for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}:`, value);
+         }
+
+         const authHeaders = getAuthHeaders();
+         const headers = {
+            'Content-Type': 'multipart/form-data',
+            ...authHeaders.headers
+         };
+
+         const { data } = await api.put(`/properties/${id}`, formData, { headers });
          return data;
       },
       onSuccess: (data, variables) => {
@@ -81,76 +180,4 @@ export const useDeleteProperty = () => {
       },
    });
 };
-
-// Media management mutations
-export const useUpdatePropertyMedia = () => {
-   const queryClient = useQueryClient();
-
-   return useMutation({
-      mutationFn: async ({ id, mediaFiles, captions = [], mainImageIndex }) => {
-         const formData = new FormData();
-
-         mediaFiles.forEach((file, index) => {
-            formData.append('media', file.file);
-            if (captions[index]) {
-               formData.append('captions', captions[index]);
-            }
-         });
-
-         if (mainImageIndex !== undefined) {
-            formData.append('mainImageIndex', mainImageIndex.toString());
-         }
-
-         const { data } = await api.post(`/properties/${id}/media`, formData, {
-            headers: {
-               'Content-Type': 'multipart/form-data',
-            },
-         });
-         return data;
-      },
-      onSuccess: (data, variables) => {
-         queryClient.invalidateQueries(['property', variables.id]);
-         queryClient.invalidateQueries(['my-properties']);
-      },
-   });
-};
-
-export const useSetMainMedia = () => {
-   const queryClient = useQueryClient();
-
-   return useMutation({
-      mutationFn: async ({ id, mediaId }) => {
-         const { data } = await api.patch(`/properties/${id}/media/main`, { mediaId });
-         return data;
-      },
-      onSuccess: (data, variables) => {
-         queryClient.invalidateQueries(['property', variables.id]);
-         queryClient.invalidateQueries(['my-properties']);
-      },
-   });
-};
-
-export const useDeleteMedia = () => {
-   const queryClient = useQueryClient();
-
-   return useMutation({
-      mutationFn: async ({ id, mediaId }) => {
-         const { data } = await api.delete(`/properties/${id}/media`, { data: { mediaId } });
-         return data;
-      },
-      onSuccess: (data, variables) => {
-         queryClient.invalidateQueries(['property', variables.id]);
-         queryClient.invalidateQueries(['my-properties']);
-      },
-   });
-};
-
-// Contact property mutation
-export const useContactProperty = () => {
-   return useMutation({
-      mutationFn: async ({ id, contactData }) => {
-         const { data } = await api.post(`/properties/${id}/contact`, contactData);
-         return data;
-      },
-   });
-};
+  

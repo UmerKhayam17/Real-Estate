@@ -3,6 +3,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { FiUpload, FiX, FiImage, FiVideo, FiFile } from 'react-icons/fi';
+import { getImageUrl } from '@/utils/imageUtils'; // Import the function
 
 const FileUpload = ({
    label = 'Upload Files',
@@ -157,10 +158,23 @@ const FileUpload = ({
       onChange([]);
    };
 
+   // Add this function to handle both existing and new files
+   const getFileDisplayUrl = (file) => {
+      // For existing files from database
+      if (file.url) {
+         return getImageUrl(file.url);
+      }
+      // For newly uploaded files
+      if (file.preview) {
+         return file.preview;
+      }
+      return 'null';
+   };
+
    return (
       <div className={`space-y-4 ${className}`}>
          <label className="block text-sm font-medium text-gray-700">
-            {label}
+            {label} {value.length > 0 && `(${value.length} new files)`}
          </label>
 
          {/* Drop Zone */}
@@ -210,15 +224,16 @@ const FileUpload = ({
          {value.length > 0 && (
             <div className="space-y-3">
                <h4 className="text-sm font-medium text-gray-700">
-                  Selected Files ({value.length})
+                  New Files to Upload ({value.length})
                </h4>
 
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {value.map((file, index) => {
                      const safeFile = getSafeFileProperties(file);
+                     const displayUrl = getFileDisplayUrl(file);
 
                      return (
-                        <div key={index} className="relative border border-gray-200 rounded-lg p-3 group hover:border-gray-300 transition-colors">
+                        <div key={file._id || index} className="relative border border-gray-200 rounded-lg p-3 group hover:border-gray-300 transition-colors">
                            {/* Remove Button */}
                            <button
                               type="button"
@@ -232,19 +247,18 @@ const FileUpload = ({
                            </button>
 
                            {/* File Preview */}
-                           {safeFile.type?.startsWith('image/') ? (
+                           {safeFile.type?.startsWith('image/') || file.type === 'image' ? (
                               <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
                                  <img
-                                    src={safeFile.preview}
+                                    src={displayUrl}
                                     alt={safeFile.name}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
                                        console.error('Failed to load image:', safeFile.name);
-                                       e.target.src = '/api/placeholder/200/200';
                                     }}
                                  />
                               </div>
-                           ) : safeFile.type === 'video' ? (
+                           ) : safeFile.type === 'video' || file.type === 'video' ? (
                               <div className="aspect-video bg-gray-800 rounded-md flex items-center justify-center relative">
                                  <FiVideo className="w-8 h-8 text-white" />
                                  <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
@@ -260,11 +274,14 @@ const FileUpload = ({
                            {/* File Info */}
                            <div className="mt-2 space-y-1">
                               <p className="text-xs font-medium text-gray-900 truncate">
-                                 {safeFile.name}
+                                 {safeFile.name || file.originalName || 'Media file'}
                               </p>
                               <p className="text-xs text-gray-500">
-                                 {formatFileSize(safeFile.size)} • {safeFile.type.toUpperCase()}
+                                 {formatFileSize(safeFile.size)} • {(safeFile.type || file.type || 'unknown').toUpperCase()}
                               </p>
+                              {file._id && (
+                                 <p className="text-xs text-green-600">Existing</p>
+                              )}
                            </div>
                         </div>
                      );

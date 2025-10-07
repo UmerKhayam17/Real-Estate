@@ -8,6 +8,7 @@ import {
    Checkbox
 } from '@/app/components/common/FormFields';
 import FileUpload from '@/app/components/common/FileUpload';
+import { getImageUrl } from '@/utils/imageUtils';
 
 // Options for dropdowns
 export const PROPERTY_TYPES = [
@@ -48,6 +49,65 @@ export const FEATURE_OPTIONS = [
    { value: 'fireplace', label: 'Fireplace' },
    { value: 'elevator', label: 'Elevator' }
 ];
+
+// Admin Section (Only visible to admin users)
+export const AdminSection = ({ formData, handleInputChange, isAdmin = false }) => {
+   if (!isAdmin) return null;
+
+   return (
+      <div className="space-y-6">
+         <h2 className="text-xl font-semibold text-gray-900">Admin Controls</h2>
+
+         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+               <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+               </div>
+               <div>
+                  <h4 className="text-sm font-medium text-yellow-800">Admin Controls</h4>
+                  <p className="text-sm text-yellow-700 mt-1">
+                     These settings are only available to administrators.
+                  </p>
+               </div>
+            </div>
+         </div>
+
+         <div className="grid grid-cols-1 gap-4">
+            <Checkbox
+               name="approved"
+               label="Approve Property Listing"
+               checked={formData.approved}
+               onChange={handleInputChange}
+               helperText="When approved, this property will be visible to all users on the platform"
+            />
+
+            {formData.approved && (
+               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                     <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                     </svg>
+                     <span className="text-sm font-medium text-green-800">Property is approved and visible to users</span>
+                  </div>
+               </div>
+            )}
+
+            {!formData.approved && (
+               <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                     <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                     </svg>
+                     <span className="text-sm font-medium text-orange-800">Property is pending approval and not visible to users</span>
+                  </div>
+               </div>
+            )}
+         </div>
+      </div>
+   );
+};
 
 // Basic Information Section
 export const BasicInformationSection = ({ formData, handleInputChange, handleNumberChange }) => (
@@ -115,7 +175,7 @@ export const BasicInformationSection = ({ formData, handleInputChange, handleNum
 );
 
 // Property Details Section
-export const PropertyDetailsSection = ({ formData, handleInputChange, handleNumberChange }) => (
+export const PropertyDetailsSection = ({ formData, handleInputChange, handleNumberChange, isAdmin = false }) => (
    <div className="space-y-6">
       <h2 className="text-xl font-semibold text-gray-900">Property Details</h2>
 
@@ -169,6 +229,21 @@ export const PropertyDetailsSection = ({ formData, handleInputChange, handleNumb
             placeholder="Number of bathrooms"
             icon="home"
          />
+
+         {/* Show views count for admin users */}
+         {isAdmin && (
+            <InputField
+               name="views"
+               label="Views"
+               type="number"
+               value={formData.views}
+               onChange={handleNumberChange}
+               placeholder="View count"
+               icon="eye"
+               disabled
+               helperText="Total views (read-only)"
+            />
+         )}
       </div>
    </div>
 );
@@ -232,78 +307,227 @@ export const AddressSection = ({ formData, handleInputChange }) => (
 );
 
 // Media Upload Section
-export const MediaUploadSection = ({ formData, handleArrayChange }) => {
+// In PropertyFormSections.js - Update MediaUploadSection
+export const MediaUploadSection = ({ formData, handleArrayChange, onDeleteMedia, onSetMainMedia }) => {
    const handleFilesChange = (newFiles) => {
+      console.log('📤 New files to add:', newFiles);
+
       const mediaItems = newFiles.map(fileItem => ({
-         file: fileItem.file, 
-         preview: fileItem.preview, 
+         file: fileItem.file,
+         preview: fileItem.preview,
          name: fileItem.name,
          type: fileItem.type?.includes('image') ? 'image' :
             fileItem.type?.includes('video') ? 'video' :
                fileItem.name?.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) ? 'image' :
                   fileItem.name?.match(/\.(mp4|mov|avi|wmv|flv|webm|mkv)$/i) ? 'video' : 'unknown',
          size: fileItem.size,
-         isMain: false, 
+         isMain: formData.media.filter(m => !m.file).length === 0 && newFiles.length === 1, // Only set as main if no existing non-file media
          caption: ''
       }));
 
-      handleArrayChange('media', mediaItems);
+      // Only add new files, don't include existing media in FileUpload
+      const existingMedia = formData.media.filter(media => media._id || !media.file);
+      const updatedMedia = [...existingMedia, ...mediaItems];
+
+      handleArrayChange('media', updatedMedia);
+   };
+
+   const handleDelete = (index, mediaId) => {
+
+      if (mediaId && onDeleteMedia) {
+         // Existing media with ID - call the deletion handler
+         onDeleteMedia(mediaId);
+      } else {
+         // Newly uploaded media without ID - just remove from array
+         const updatedMedia = formData.media.filter((_, i) => i !== index);
+
+         handleArrayChange('media', updatedMedia);
+      }
+   };
+
+   const handleSetMain = (index, mediaId) => {
+
+      if (onSetMainMedia && mediaId) {
+         onSetMainMedia(mediaId);
+      } else {
+         const updatedMedia = formData.media.map((media, i) => ({
+            ...media,
+            isMain: i === index
+         }));
+
+         handleArrayChange('media', updatedMedia);
+      }
    };
 
    const mediaValue = Array.isArray(formData.media) ? formData.media : [];
+
+   const existingMedia = mediaValue.filter(media => media._id);
+   const newMedia = mediaValue.filter(media => !media._id && media.file);
 
    return (
       <div className="space-y-6">
          <h2 className="text-xl font-semibold text-gray-900">Media Upload</h2>
 
+         {/* FileUpload should only handle NEW files */}
          <FileUpload
-            label="Property Images & Videos"
-            value={mediaValue}
+            label="Upload New Images & Videos"
+            value={newMedia} // Only pass new files to FileUpload
             onChange={handleFilesChange}
-            helperText="Upload images and videos of your property. First image will be used as cover."
+            onDelete={handleDelete}
+            onSetMain={handleSetMain}
+            helperText="Upload new images and videos. They will be added to your existing media."
             maxSize={20 * 1024 * 1024} // 20MB
             className="md:col-span-2"
-         /> 
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-            <div>
-               <h4 className="font-medium mb-2">Tips for better media:</h4>
-               <ul className="list-disc list-inside space-y-1">
-                  <li>Use high-quality images</li>
-                  <li>Show all rooms and key features</li>
-                  <li>Include exterior shots</li>
-                  <li>Good lighting is essential</li>
-               </ul>
+         />
+
+         {/* Show existing media from database */}
+         {existingMedia.length > 0 && (
+            <div className="mt-6">
+               <h4 className="font-medium mb-4 text-lg">Existing Media</h4>
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {existingMedia.map((media, index) => {
+                     const mediaIndex = mediaValue.findIndex(m => m._id === media._id);
+                     return (
+                        <div key={media._id} className="relative group border rounded-lg overflow-hidden">
+                           <img
+                              src={getImageUrl(media.url)}
+                              alt={media.caption || `Media ${index + 1}`}
+                              className="w-full h-24 object-cover"
+                              onError={(e) => {
+                                 console.error('Failed to load existing image:', media.url);
+                              }}
+                           />
+                           {media.isMain && (
+                              <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                                 Main
+                              </span>
+                           )}
+                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <button
+                                 type="button"
+                                 onClick={() => handleSetMain(mediaIndex, media._id)}
+                                 className="bg-white text-gray-800 p-1 rounded mr-1 text-xs"
+                              >
+                                 Set Main
+                              </button>
+                              <button
+                                 type="button"
+                                 onClick={() => handleDelete(mediaIndex, media._id)}
+                                 className="bg-red-500 text-white p-1 rounded text-xs"
+                              >
+                                 Delete
+                              </button>
+                           </div>
+                        </div>
+                     );
+                  })}
+               </div>
             </div>
-            <div>
-               <h4 className="font-medium mb-2">Requirements:</h4>
-               <ul className="list-disc list-inside space-y-1">
-                  <li>Max 20MB per file</li>
-                  <li>Images: JPEG, PNG, WebP</li>
-                  <li>Videos: MP4, MOV, AVI</li>
-                  <li>Recommended: 5-10 media files</li>
-               </ul>
+         )}
+
+         {/* Show newly uploaded media previews */}
+         {newMedia.length > 0 && (
+            <div className="mt-4">
+               <h4 className="font-medium mb-2">New Uploads (Not Saved Yet)</h4>
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {newMedia.map((media, index) => {
+                     const mediaIndex = mediaValue.findIndex(m => m.file === media.file);
+                     return (
+                        <div key={index} className="relative group border rounded-lg overflow-hidden">
+                           <img
+                              src={media.preview}
+                              alt={media.caption || `New media ${index + 1}`}
+                              className="w-full h-24 object-cover"
+                           />
+                           {media.isMain && (
+                              <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                                 Main
+                              </span>
+                           )}
+                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <button
+                                 type="button"
+                                 onClick={() => handleSetMain(mediaIndex)}
+                                 className="bg-white text-gray-800 p-1 rounded mr-1 text-xs"
+                                 disabled={media.isMain}
+                              >
+                                 {media.isMain ? 'Main' : 'Set Main'}
+                              </button>
+                              <button
+                                 type="button"
+                                 onClick={() => handleDelete(mediaIndex)}
+                                 className="bg-red-500 text-white p-1 rounded text-xs"
+                              >
+                                 Delete
+                              </button>
+                           </div>
+                        </div>
+                     );
+                  })}
+               </div>
             </div>
-         </div>
+         )}
+
+         {/* Debug info */}
+         {process.env.NODE_ENV === 'development' && (
+            <div className="bg-gray-100 p-3 rounded text-xs">
+               <p><strong>Media Debug:</strong></p>
+               <p>Total media in formData: {mediaValue.length}</p>
+               <p>Existing (from DB): {existingMedia.length}</p>
+               <p>New (uploads): {newMedia.length}</p>
+               <p>Main image: {mediaValue.find(m => m.isMain)?.url || 'None'}</p>
+            </div>
+         )}
       </div>
    );
 };
 
-// Features Section
-export const FeaturesSection = ({ formData, handleArrayChange }) => (
-   <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900">Features & Amenities</h2>
+// In PropertyFormSections.js - Update FeaturesSection
+export const FeaturesSection = ({ formData, handleArrayChange }) => {
+   // Enhanced feature value parsing
+   const featuresValue = React.useMemo(() => {
+      if (Array.isArray(formData.features)) {
+         return formData.features;
+      }
 
-      <MultiSelectField
-         name="features"
-         label="Property Features"
-         value={formData.features}
-         onChange={(e) => handleArrayChange('features', e.target.value)}
-         options={FEATURE_OPTIONS}
-         placeholder="Select features available"
-         helperText="Choose all features that apply to this property"
-      />
-   </div>
-);
+      if (typeof formData.features === 'string') {
+         try {
+            // Handle stringified arrays from database response
+            if (formData.features.startsWith('[') && formData.features.endsWith(']')) {
+               const parsed = JSON.parse(formData.features);
+               return Array.isArray(parsed) ? parsed : [parsed];
+            } else {
+               // Handle comma-separated string
+               return formData.features.split(',').map(f => f.trim()).filter(f => f);
+            }
+         } catch (error) {
+            console.error('Error parsing features:', error);
+            return [];
+         }
+      }
 
+      return [];
+   }, [formData.features]);
 
+   const handleFeaturesChange = (selectedFeatures) => {
+      console.log('FeaturesSection - Setting features:', selectedFeatures);
+      handleArrayChange('features', selectedFeatures);
+   };
 
+   return (
+      <div className="space-y-6">
+         <h2 className="text-xl font-semibold text-gray-900">Features & Amenities</h2>
+
+         <MultiSelectField
+            name="features"
+            label="Property Features"
+            value={featuresValue}
+            onChange={(e) => handleFeaturesChange(e.target.value)}
+            options={FEATURE_OPTIONS}
+            placeholder="Select features available"
+            helperText="Choose all features that apply to this property"
+         />
+        
+      </div>
+   );
+};

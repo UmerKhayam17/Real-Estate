@@ -10,6 +10,7 @@ export default function Pedingapprovals(){
         title="Pending Approval"
         description="Properties waiting for administrator approval"
         showAddButton={false}
+        showEditButton={true}
       />
     </>
   )

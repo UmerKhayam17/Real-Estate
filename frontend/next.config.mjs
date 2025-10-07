@@ -9,21 +9,22 @@ const nextConfig = {
             port: '',
             pathname: '/**',
          },
-         // You can add more domains if needed
          {
-            protocol: 'https',
-            hostname: 'images.unsplash.com',
-            port: '',
-            pathname: '/**',
-         },
-         {
-            protocol: 'https',
-            hostname: 'via.placeholder.com',
-            port: '',
-            pathname: '/**',
+            protocol: 'http',
+            hostname: 'localhost',
+            port: '5000',
+            pathname: '/uploads/**',
          },
       ],
    },
+    async rewrites() {
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

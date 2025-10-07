@@ -10,6 +10,8 @@ export default function Pedingapprovals() {
             title="Verified Approval"
             description="Properties that administrator approval"
             showAddButton={false}
+            showEditButton={false}
+
          />
       </>
    )

@@ -36,22 +36,3 @@ export const useProperty = (id) => {
       staleTime: 10 * 60 * 1000, // 10 minutes
    });
 };
-
-// Get user's properties (for dealer)
-export const useMyProperties = (filters = {}) => {
-   return useQuery({
-      queryKey: ['my-properties', filters],
-      queryFn: async () => {
-         const params = new URLSearchParams();
-
-         Object.entries(filters).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== '') {
-               params.append(key, value);
-            }
-         });
-
-         const { data } = await api.get(`/users/me/properties?${params.toString()}`);
-         return data;
-      },
-   });
-};

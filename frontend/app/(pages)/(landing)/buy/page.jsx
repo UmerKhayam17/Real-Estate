@@ -7,7 +7,9 @@ export default function BuyPage() {
             showOnlyApproved={true}
             title="Verified Properties"
             description="Browse through our collection of verified and approved properties"
-            showAddButton={false} // Hide add button if this is a public page
+            showAddButton={false}
+            showEditButton={false}
+
          />
       </div>
    )
