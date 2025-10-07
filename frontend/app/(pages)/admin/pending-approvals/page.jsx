@@ -1,11 +1,17 @@
 // peding-approvals/page.jsx
 import React from 'react'
-import PropertiesPage from '@/app/(pages)/dealer/properties/page'
+import PropertiesPage from '@/app/(pages)/dealer/properties/get-all/page'
 
 export default function Pedingapprovals(){
   return (
     <>
-      <PropertiesPage />
+      <PropertiesPage
+        showOnlyPending={true}
+        title="Pending Approval"
+        description="Properties waiting for administrator approval"
+        showAddButton={false}
+        showEditButton={true}
+      />
     </>
   )
 }

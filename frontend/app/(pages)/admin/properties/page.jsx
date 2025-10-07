@@ -1,4 +1,4 @@
-// rent/page.jsx
+// approved-propertities/page.jsx
 import React from 'react'
 import PropertiesPage from '@/app/(pages)/dealer/properties/get-all/page'
 
@@ -10,8 +10,7 @@ export default function Pedingapprovals() {
             title="Verified Approval"
             description="Properties that administrator approval"
             showAddButton={false}
-            showEditButton={false}
-
+            showEditButton={true}
          />
       </>
    )

@@ -1,31 +1,28 @@
-// hooks/usePropertyForm.js
+// hooks/usePropertyForm.js - Updated for both create and edit
 'use client'
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useCreateProperty } from '@/mutations/propertyMutation';
+import { useState, useEffect } from 'react';
+import { useCreateProperty, useUpdateProperty } from '@/mutations/propertyMutation';
+import { isAuthenticated } from '@/lib/auth';
+import { toast } from 'react-hot-toast';
 
-export const usePropertyForm = () => {
+export const usePropertyForm = (existingProperty = null) => {
    const router = useRouter();
    const createPropertyMutation = useCreateProperty();
+   const updatePropertyMutation = useUpdateProperty();
 
    const [formData, setFormData] = useState({
-      // Basic Information
+      // Initial empty state
       title: '',
       description: '',
       price: 0,
       currency: 'PKR',
-
-      // Property Classification
       type: 'residential',
       saleOrRent: 'sale',
       status: 'available',
-
-      // Property Specifications
       bedrooms: '',
       bathrooms: '',
       area: '',
-
-      // Address
       address: {
          street: '',
          city: '',
@@ -33,24 +30,53 @@ export const usePropertyForm = () => {
          country: 'Pakistan',
          postalCode: ''
       },
-
-      // Location (GeoJSON)
       location: {
          type: 'Point',
-         coordinates: [0, 0] // [lng, lat]
+         coordinates: [0, 0]
       },
-
-      // Media & Features
-      media: [], // Changed from 'images' to 'media' to match backend
+      media: [],
       features: [],
-
-      // Management
-      agent: '', // Will be set from user context
+      agent: '',
       approved: false,
       views: 0
    });
 
    const [isSubmitting, setIsSubmitting] = useState(false);
+   const [mediaToDelete, setMediaToDelete] = useState([]);
+
+   // Populate form when existingProperty changes
+   useEffect(() => {
+      if (existingProperty) {
+         setFormData({
+            title: existingProperty.title || '',
+            description: existingProperty.description || '',
+            price: existingProperty.price || 0,
+            currency: existingProperty.currency || 'PKR',
+            type: existingProperty.type || 'residential',
+            saleOrRent: existingProperty.saleOrRent || 'sale',
+            status: existingProperty.status || 'available',
+            bedrooms: existingProperty.bedrooms || '',
+            bathrooms: existingProperty.bathrooms || '',
+            area: existingProperty.area || '',
+            address: {
+               street: existingProperty.address?.street || '',
+               city: existingProperty.address?.city || '',
+               state: existingProperty.address?.state || '',
+               country: existingProperty.address?.country || 'Pakistan',
+               postalCode: existingProperty.address?.postalCode || ''
+            },
+            location: {
+               type: 'Point',
+               coordinates: existingProperty.location?.coordinates || [0, 0]
+            },
+            media: existingProperty.media || [],
+            features: existingProperty.features || [],
+            agent: existingProperty.agent || '',
+            approved: existingProperty.approved || false,
+            views: existingProperty.views || 0
+         });
+      }
+   }, [existingProperty]);
 
    // Handle input changes
    const handleInputChange = (e) => {
@@ -102,6 +128,26 @@ export const usePropertyForm = () => {
       }));
    };
 
+   // Add function to handle media deletion
+   const handleDeleteMedia = (mediaId) => {
+      setMediaToDelete(prev => [...prev, mediaId]);
+      setFormData(prev => ({
+         ...prev,
+         media: prev.media.filter(media => media._id !== mediaId)
+      }));
+   };
+
+   // Add function to handle media reordering or main image change
+   const handleSetMainMedia = (mediaId) => {
+      setFormData(prev => ({
+         ...prev,
+         media: prev.media.map(media => ({
+            ...media,
+            isMain: media._id === mediaId
+         }))
+      }));
+   };
+
    const goBack = () => {
       router.back();
    };
@@ -138,15 +184,47 @@ export const usePropertyForm = () => {
       });
    };
 
-   // Submit handler with API integration
-   const handleSubmit = async (e) => {
+   // Submit handler for both create and update
+   const handleSubmit = async (e, propertyId = null) => {
       e.preventDefault();
+
+      if (!isAuthenticated()) {
+         toast.error('Please login to continue');
+         router.push('/login');
+         return { success: false, error: 'Not authenticated' };
+      }
+
       setIsSubmitting(true);
 
       try {
-         console.log('📝 FORM DATA TO BE SENT:', formData);
+         console.log('🚀 SUBMITTING PROPERTY FORM - RAW FORM DATA:', formData);
+        
+         let cleanedFeatures = [];
+         if (Array.isArray(formData.features)) {
+            cleanedFeatures = formData.features;
+         } else if (typeof formData.features === 'string') {
+            try {
+               // Handle stringified arrays
+               if (formData.features.startsWith('[') && formData.features.endsWith(']')) {
+                  cleanedFeatures = JSON.parse(formData.features);
+               } else {
+                  // Handle comma-separated strings
+                  cleanedFeatures = formData.features.split(',').map(f => f.trim()).filter(f => f);
+               }
+            } catch (error) {
+               console.error('Error parsing features:', error);
+               cleanedFeatures = [];
+            }
+         }
 
-         // Prepare data for API - match backend structure
+         // Final cleanup - ensure all features are strings
+         cleanedFeatures = cleanedFeatures
+            .filter(feature => feature && typeof feature === 'string')
+            .map(feature => feature.trim());
+
+         console.log('✅ Cleaned features for submission:', cleanedFeatures);
+
+         // Prepare the data for API
          const submitData = {
             title: formData.title,
             description: formData.description,
@@ -169,29 +247,44 @@ export const usePropertyForm = () => {
                type: 'Point',
                coordinates: formData.location.coordinates.map(coord => Number(coord) || 0)
             },
-            features: formData.features,
-            media: formData.media.map(mediaItem => ({
-               file: mediaItem.file, // Actual File object for upload
-               type: mediaItem.type, // 'image' or 'video'
-               isMain: mediaItem.isMain || false,
-               caption: mediaItem.caption || ''
-            }))
+            features: cleanedFeatures, // Use the cleaned features
+            media: formData.media,
+            approved: formData.approved
          };
 
-         console.log('🚀 FINAL DATA SENT TO API:', submitData);
+         console.log('📦 Prepared submit data:', submitData);
 
-         // Call the mutation
-         const result = await createPropertyMutation.mutateAsync(submitData);
+         // For updates, include media to delete
+         if (propertyId && mediaToDelete.length > 0) {
+            submitData.mediaIdsToDelete = mediaToDelete;
+         }
 
-         console.log('✅ API RESPONSE:', result);
+         let result;
+         if (propertyId) {
+            result = await updatePropertyMutation.mutateAsync({
+               id: propertyId,
+               propertyData: submitData
+            });
+         } else {
+            result = await createPropertyMutation.mutateAsync(submitData);
+         }
 
-         // Reset form after successful submission
-         resetForm();
+         console.log('✅ PROPERTY SUBMISSION SUCCESS:', result);
+
+         // Clear media to delete after successful update
+         if (propertyId) {
+            setMediaToDelete([]);
+         }
+
+         if (!propertyId) {
+            resetForm();
+         }
+
          return { success: true, data: result };
 
       } catch (error) {
          console.error('❌ ERROR SUBMITTING PROPERTY:', error);
-         console.error('Error details:', error.response?.data);
+         console.error('Error response:', error.response?.data);
          return {
             success: false,
             error: error.response?.data?.message || error.message
@@ -204,11 +297,13 @@ export const usePropertyForm = () => {
    return {
       formData,
       setFormData,
-      isSubmitting: isSubmitting || createPropertyMutation.isLoading,
+      isSubmitting: isSubmitting || createPropertyMutation.isLoading || updatePropertyMutation.isLoading,
       handleInputChange,
       handleNumberChange,
       handleArrayChange,
       handleLocationChange,
+      handleDeleteMedia,
+      handleSetMainMedia,
       handleSubmit,
       resetForm,
       goBack

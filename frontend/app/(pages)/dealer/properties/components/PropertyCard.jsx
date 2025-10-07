@@ -8,7 +8,8 @@ import {
   FiEye,
   FiCheckCircle,
   FiClock,
-  FiDollarSign
+  FiDollarSign,
+  FiEdit
 } from 'react-icons/fi';
 import {
   MdBathtub,
@@ -21,12 +22,12 @@ import { getPropertyImageUrl } from '@/utils/imageUtils';
 import ImageWithFallback from '@/app/components/common/ImageWithFallback';
 import Link from 'next/link';
 
-const PropertyCard = ({ property }) => {
+const PropertyCard = ({ property, showEditButton = false }) => {
   const [imageError, setImageError] = useState(false);
 
   // Get main image using the utility function
   const imageUrl = getPropertyImageUrl(property);
-console.log("the iamge urls ois s",imageUrl)
+
   // Format price with commas
   const formatPrice = (price, currency) => {
     if (!price) return 'Price not set';
@@ -67,19 +68,10 @@ console.log("the iamge urls ois s",imageUrl)
     }
   };
 
-  // In PropertyCard component, add this:
-React.useEffect(() => {
-  if (imageUrl) {
-    console.log('🖼️ Image URL:', imageUrl);
-    console.log('📁 Property media:', property.media);
-  }
-}, [imageUrl, property.media]);
-
   const statusInfo = getStatusInfo(property.status);
 
   return (
-    <Link href={`/dealer/properties/${property.id}`} className="block">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden group cursor-pointer">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden group">
       {/* Image Section */}
       <div className="relative overflow-hidden">
         {imageUrl ? (
@@ -112,6 +104,18 @@ React.useEffect(() => {
           {property.saleOrRent === 'sale' ? <MdSell className="w-3 h-3" /> : <FiDollarSign className="w-3 h-3" />}
           {property.saleOrRent === 'sale' ? 'For Sale' : 'For Rent'}
         </div>
+
+        {/* Edit Button - Only show if prop is true */}
+        {showEditButton && (
+          <Link
+            href={`/dealer/properties/edit/${property._id}`}
+            className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white px-3 py-2 rounded-full text-xs font-medium text-gray-700 flex items-center gap-1 transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <FiEdit className="w-3 h-3" />
+            Edit
+          </Link>
+        )}
       </div>
 
       {/* Content Section */}
@@ -125,9 +129,11 @@ React.useEffect(() => {
         </div>
 
         {/* Title */}
-        <h2 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-1">
-          {property.title || 'Untitled Property'}
-        </h2>
+        <Link href={`/dealer/properties/${property._id}`}>
+          <h2 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-1 hover:text-primary-600 transition-colors">
+            {property.title || 'Untitled Property'}
+          </h2>
+        </Link>
 
         {/* Description */}
         {property.description && (
@@ -224,7 +230,6 @@ React.useEffect(() => {
         </div>
       </div>
     </div>
-    </Link>
   );
 };
 
