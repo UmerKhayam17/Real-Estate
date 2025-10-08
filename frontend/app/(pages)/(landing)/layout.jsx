@@ -1,5 +1,6 @@
 import Navbar from "@/app/components/layout/landing/navbar"
 import Header from "@/app/components/layout/landing/header"
+import Footer from "@/app/components/layout/landing/footer"
 
 export const metadata = {
    title: "PrimeProperties - Find Your Dream Home",
@@ -14,6 +15,7 @@ export default function LandingPageLayout({ children }) {
          <main>
             {children}
          </main>
+         <Footer />
       </div>
    );
 }
