@@ -9,7 +9,8 @@ import {
   FiCheckCircle,
   FiClock,
   FiDollarSign,
-  FiEdit
+  FiEdit,
+  FiUser
 } from 'react-icons/fi';
 import {
   MdBathtub,
@@ -232,9 +233,17 @@ const PropertyCard = ({ property, showEditButton = false }) => {
             <span>{property.approved ? 'Verified' : 'Pending Approval'}</span>
           </div>
 
-          <div className="text-gray-400 text-xs">
-            {property.createdAt ? new Date(property.createdAt).toLocaleDateString() : 'Recently added'}
-          </div>
+          {/* Make agent info clickable */}
+          {property.agent && (
+            <Link
+              href={`/dealer/properties/agent/${property.agent._id}`}
+              className="flex items-center gap-1 text-gray-400 text-xs hover:text-primary-600 transition-colors"
+              onClick={(e) => e.stopPropagation()} // Prevent card click
+            >
+              <FiUser className="w-3 h-3" />
+              <span>View all by {property.agent.name}</span>
+            </Link>
+          )}
         </div>
       </div>
     </div>

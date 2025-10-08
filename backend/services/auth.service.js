@@ -16,7 +16,12 @@ exports.jwtVerify = (token) => {
 
 // ---------------- UserId Generator ----------------
 exports.generateUserId = (identifier) => {
-  // identifier can be email or phone
-  const hash = crypto.createHash("sha256").update(identifier).digest("hex");
-  return "USR-" + hash.substring(0, 10).toUpperCase(); // e.g., USR-8F3A9B12C4
+  // Add timestamp and random bytes to ensure uniqueness
+  const timestamp = Date.now().toString();
+  const randomBytes = crypto.randomBytes(4).toString('hex');
+  const hash = crypto
+    .createHash("sha256")
+    .update(identifier + timestamp + randomBytes)
+    .digest("hex");
+  return "USR-" + hash.substring(0, 10).toUpperCase();
 }
