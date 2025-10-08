@@ -5,27 +5,31 @@ import React, { useState, useMemo } from 'react';
 import PropertyCard from '../components/PropertyCard';
 import PropertyFilters from '../components/PropertyFilters';
 import { useProperties } from '@/Queries/propertyQuery';
-import { FiHome, FiPlus, FiLoader, FiCheck, FiClock } from 'react-icons/fi';
+import { FiHome, FiPlus, FiLoader, FiCheck, FiClock, FiUser } from 'react-icons/fi';
 import Link from 'next/link';
 
 // Define prop types
 const PropertiesPage = ({
    showOnlyApproved = false,
    showOnlyPending = false,
-   showAll = false, // New prop to show all properties
+   showAll = false,
    hideFilters = false,
    hideHeader = false,
    hideStats = false,
    title = "Properties",
    description = "Browse through our collection of premium properties",
    showAddButton = true,
-   showEditButton = false // New prop to control edit button visibility
+   showEditButton = false,
+   filterType = null,
+   filterSaleOrRent = null,
+   filterStatus = null,
+   filterAgentId = null // NEW: Filter by specific agent
 }) => {
    const [searchQuery, setSearchQuery] = useState('');
    const [filters, setFilters] = useState({
-      type: 'all',
-      saleOrRent: 'all',
-      status: 'all',
+      type: filterType || 'all',
+      saleOrRent: filterSaleOrRent || 'all',
+      status: filterStatus || 'all',
       minPrice: '',
       maxPrice: '',
       bedrooms: '',
@@ -37,26 +41,56 @@ const PropertiesPage = ({
       const apiFilter = {};
 
       if (searchQuery) apiFilter.q = searchQuery;
-      if (filters.type !== 'all') apiFilter.type = filters.type;
-      if (filters.saleOrRent !== 'all') apiFilter.saleOrRent = filters.saleOrRent;
-      if (filters.status !== 'all') apiFilter.status = filters.status;
+
+      // Use prop filters first, then user filters
+      if (filterType && filterType !== 'all') {
+         apiFilter.type = filterType;
+      } else if (filters.type !== 'all') {
+         apiFilter.type = filters.type;
+      }
+
+      if (filterSaleOrRent && filterSaleOrRent !== 'all') {
+         apiFilter.saleOrRent = filterSaleOrRent;
+      } else if (filters.saleOrRent !== 'all') {
+         apiFilter.saleOrRent = filters.saleOrRent;
+      }
+
+      if (filterStatus && filterStatus !== 'all') {
+         apiFilter.status = filterStatus;
+      } else if (filters.status !== 'all') {
+         apiFilter.status = filters.status;
+      }
+
+      // NEW: Add agent filter
+      if (filterAgentId) {
+         apiFilter.agent = filterAgentId;
+      }
+
       if (filters.minPrice) apiFilter.minPrice = filters.minPrice;
       if (filters.maxPrice) apiFilter.maxPrice = filters.maxPrice;
       if (filters.bedrooms) apiFilter.bedrooms = filters.bedrooms;
       if (filters.city) apiFilter.city = filters.city;
 
       // Add approval filters based on props
-      // Only apply approval filter if explicitly requested
       if (showOnlyApproved) {
          apiFilter.approved = true;
       } else if (showOnlyPending) {
          apiFilter.approved = false;
       }
-      // If showAll is true, don't apply any approval filter (show everything)
 
       // console.log('🔍 API FILTERS SENT:', apiFilter);
       return apiFilter;
-   }, [searchQuery, filters, showOnlyApproved, showOnlyPending, showAll]);
+   }, [
+      searchQuery,
+      filters,
+      showOnlyApproved,
+      showOnlyPending,
+      showAll,
+      filterType,
+      filterSaleOrRent,
+      filterStatus,
+      filterAgentId // NEW: Add to dependencies
+   ]);
 
    const {
       data: propertiesData,
@@ -75,17 +109,15 @@ const PropertiesPage = ({
    const forSaleCount = properties.filter(p => p.saleOrRent === 'sale').length;
    const forRentCount = properties.filter(p => p.saleOrRent === 'rent').length;
 
-   // Log API response
-   React.useEffect(() => {
-      if (propertiesData) {
-         // console.log('🏠 PROPERTIES RECEIVED:', properties);
-         // console.log('🔍 Approval stats:', {
-         //    approved: approvedCount,
-         //    pending: pendingCount,
-         //    total: totalProperties
-         // });
-      }
-   }, [propertiesData, properties, approvedCount, pendingCount, totalProperties]);
+   // Check if specific filters are applied via props
+   const hasTypeFilter = filterType && filterType !== 'all';
+   const hasSaleOrRentFilter = filterSaleOrRent && filterSaleOrRent !== 'all';
+   const hasStatusFilter = filterStatus && filterStatus !== 'all';
+   const hasAgentFilter = filterAgentId; // NEW
+
+   // Get agent info from first property (if agent filter is applied)
+   const agentInfo = hasAgentFilter && properties.length > 0 ? properties[0].agent : null;
+
 
    if (error) {
       console.error('❌ PROPERTIES API ERROR:', error);
@@ -128,9 +160,40 @@ const PropertiesPage = ({
                               All Properties
                            </span>
                         )}
+                        {/* Show badges for specific filters */}
+                        {hasTypeFilter && (
+                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 capitalize">
+                              {filterType}
+                           </span>
+                        )}
+                        {hasSaleOrRentFilter && (
+                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800 capitalize">
+                              For {filterSaleOrRent === 'sale' ? 'Sale' : 'Rent'}
+                           </span>
+                        )}
+                        {hasStatusFilter && (
+                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800 capitalize">
+                              {filterStatus}
+                           </span>
+                        )}
+                        {/* NEW: Agent filter badge */}
+                        {hasAgentFilter && agentInfo && (
+                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-cyan-100 text-cyan-800">
+                              <FiUser className="w-4 h-4 mr-1" />
+                              {agentInfo.name || 'Agent'}
+                           </span>
+                        )}
                      </h1>
                      <p className="mt-2 text-gray-600">
                         {description}
+                        {/* Add agent-specific description */}
+                        {hasAgentFilter && agentInfo && (
+                           <span className="block text-sm text-gray-500 mt-1">
+                              Properties listed by {agentInfo.name}
+                              {agentInfo.email && ` • ${agentInfo.email}`}
+                              {agentInfo.phone && ` • ${agentInfo.phone}`}
+                           </span>
+                        )}
                      </p>
                   </div>
 
@@ -146,12 +209,14 @@ const PropertiesPage = ({
                </div>
             )}
 
-            {/* Stats - Enhanced for "show all" case */}
+            {/* Stats - Enhanced for various filter cases */}
             {!isLoading && !hideStats && (
                <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
                   <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                      <div className="text-2xl font-bold text-gray-900">{totalProperties}</div>
-                     <div className="text-sm text-gray-500">Total Properties</div>
+                     <div className="text-sm text-gray-500">
+                        {hasAgentFilter ? "Agent's Properties" : "Total Properties"}
+                     </div>
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                      <div className="text-2xl font-bold text-gray-900">{availableCount}</div>
@@ -166,8 +231,8 @@ const PropertiesPage = ({
                      <div className="text-sm text-gray-500">For Rent</div>
                   </div>
 
-                  {/* Approval Stats - Show both when displaying all properties */}
-                  {showAll && (
+                  {/* Approval Stats - Show both when displaying all properties or when no approval filter is set */}
+                  {(showAll || (!showOnlyApproved && !showOnlyPending)) && (
                      <>
                         <div className="bg-white rounded-lg p-4 shadow-sm border border-green-200">
                            <div className="text-2xl font-bold text-green-600">{approvedCount}</div>
@@ -212,8 +277,8 @@ const PropertiesPage = ({
                </div>
             )}
 
-            {/* Filters - Conditionally rendered */}
-            {!hideFilters && (
+            {/* Filters - Conditionally rendered, hide if specific filters are set via props */}
+            {!hideFilters && !hasTypeFilter && !hasSaleOrRentFilter && !hasStatusFilter && !hasAgentFilter && (
                <PropertyFilters
                   filters={filters}
                   onFiltersChange={setFilters}
@@ -237,8 +302,8 @@ const PropertiesPage = ({
                      <PropertyCard
                         key={property._id}
                         property={property}
-                        showApprovalStatus={showAll} 
-                        showEditButton={showEditButton} 
+                        showApprovalStatus={showAll || (!showOnlyApproved && !showOnlyPending)}
+                        showEditButton={showEditButton}
                      />
                   ))}
                </div>
@@ -250,8 +315,12 @@ const PropertiesPage = ({
                      <p className="mt-2 text-gray-500">
                         {showOnlyApproved && "No verified properties available."}
                         {showOnlyPending && "No properties pending approval."}
+                        {hasTypeFilter && `No ${filterType} properties found.`}
+                        {hasSaleOrRentFilter && `No properties for ${filterSaleOrRent} found.`}
+                        {hasStatusFilter && `No ${filterStatus} properties found.`}
+                        {hasAgentFilter && "No properties found for this agent."}
                         {showAll && "No properties found matching your criteria."}
-                        {!showOnlyApproved && !showOnlyPending && !showAll && "Try adjusting your search or filters to find what you're looking for."}
+                        {!showOnlyApproved && !showOnlyPending && !hasTypeFilter && !hasSaleOrRentFilter && !hasStatusFilter && !hasAgentFilter && !showAll && "Try adjusting your search or filters to find what you're looking for."}
                      </p>
                   </div>
                )
@@ -264,6 +333,10 @@ const PropertiesPage = ({
                   {showOnlyApproved && " (Verified Only)"}
                   {showOnlyPending && " (Pending Approval Only)"}
                   {showAll && " (All Properties)"}
+                  {hasTypeFilter && ` (${filterType} only)`}
+                  {hasSaleOrRentFilter && ` (For ${filterSaleOrRent} only)`}
+                  {hasStatusFilter && ` (${filterStatus} only)`}
+                  {hasAgentFilter && " (Agent's Properties)"}
                </div>
             )}
          </div>

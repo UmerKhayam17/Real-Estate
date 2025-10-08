@@ -7,11 +7,12 @@ export default function Pedingapprovals() {
       <>
          <PropertiesPage
             showOnlyApproved={true}
-            title="Verified Approval"
-            description="Properties that administrator approval"
+            filterType="residential"
+            filterSaleOrRent="rent"
+            title="Residential Properties for Rent"
+            description="Find your perfect home from our verified residential rental properties"
             showAddButton={false}
             showEditButton={false}
-
          />
       </>
    )

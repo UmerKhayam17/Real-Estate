@@ -9,7 +9,8 @@ import {
   FiCheckCircle,
   FiClock,
   FiDollarSign,
-  FiEdit
+  FiEdit,
+  FiUser
 } from 'react-icons/fi';
 import {
   MdBathtub,
@@ -21,9 +22,11 @@ import {
 import { getPropertyImageUrl } from '@/utils/imageUtils';
 import ImageWithFallback from '@/app/components/common/ImageWithFallback';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const PropertyCard = ({ property, showEditButton = false }) => {
   const [imageError, setImageError] = useState(false);
+  const router = useRouter();
 
   // Get main image using the utility function
   const imageUrl = getPropertyImageUrl(property);
@@ -68,10 +71,18 @@ const PropertyCard = ({ property, showEditButton = false }) => {
     }
   };
 
+  // Handle card click
+  const handleCardClick = () => {
+    router.push(`/dealer/properties/${property._id}`);
+  };
+
   const statusInfo = getStatusInfo(property.status);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden group">
+    <div
+      className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden group cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Image Section */}
       <div className="relative overflow-hidden">
         {imageUrl ? (
@@ -110,7 +121,7 @@ const PropertyCard = ({ property, showEditButton = false }) => {
           <Link
             href={`/dealer/properties/edit/${property._id}`}
             className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white px-3 py-2 rounded-full text-xs font-medium text-gray-700 flex items-center gap-1 transition-colors"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()} // Prevent card click when editing
           >
             <FiEdit className="w-3 h-3" />
             Edit
@@ -128,12 +139,10 @@ const PropertyCard = ({ property, showEditButton = false }) => {
           </h3>
         </div>
 
-        {/* Title */}
-        <Link href={`/dealer/properties/${property._id}`}>
-          <h2 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-1 hover:text-primary-600 transition-colors">
-            {property.title || 'Untitled Property'}
-          </h2>
-        </Link>
+        {/* Title - Remove individual Link since entire card is clickable */}
+        <h2 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-1 hover:text-primary-600 transition-colors">
+          {property.title || 'Untitled Property'}
+        </h2>
 
         {/* Description */}
         {property.description && (
@@ -215,18 +224,26 @@ const PropertyCard = ({ property, showEditButton = false }) => {
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div className="flex items-center gap-1 text-gray-400 text-xs">
+          <div className="flex items-center gap-1 text-gray-600 text-xs">
             {property.approved ? (
-              <FiCheckCircle className="w-3 h-3 text-green-500" />
+              <FiCheckCircle className="w-4 h-4 text-green-500" />
             ) : (
-              <FiClock className="w-3 h-3 text-yellow-500" />
+              <FiClock className="w-4 h-4 text-yellow-500" />
             )}
             <span>{property.approved ? 'Verified' : 'Pending Approval'}</span>
           </div>
 
-          <div className="text-gray-400 text-xs">
-            {property.createdAt ? new Date(property.createdAt).toLocaleDateString() : 'Recently added'}
-          </div>
+          {/* Make agent info clickable */}
+          {property.agent && (
+            <Link
+              href={`/dealer/properties/agent/${property.agent._id}`}
+              className="flex items-center gap-1 text-gray-400 text-xs hover:text-primary-600 transition-colors"
+              onClick={(e) => e.stopPropagation()} // Prevent card click
+            >
+              <FiUser className="w-3 h-3" />
+              <span>View all by {property.agent.name}</span>
+            </Link>
+          )}
         </div>
       </div>
     </div>

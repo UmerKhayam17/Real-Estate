@@ -51,17 +51,7 @@ const PropertyDetailsPage = () => {
    const mainImageUrl = images[selectedImageIndex]?.url ?
       getImageUrl(images[selectedImageIndex].url) :
       getPropertyImageUrl(property);
-
-   // Debug the image URLs
-   React.useEffect(() => {
-      if (images.length > 0) {
-         console.log('🖼️ All image URLs:', images.map(img => ({
-            original: img.url,
-            processed: getImageUrl(img.url)
-         })));
-      }
-   }, [images]);
-
+      
    if (isLoading) {
       return (
          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -371,6 +361,15 @@ const PropertyDetailsPage = () => {
                                     <dt className="text-gray-600 text-sm">Email</dt>
                                     <dd className="text-gray-900 font-medium">{property.agent.email}</dd>
                                  </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 <Link
+                                    href={`/properties/agent/${property.agent?._id}`}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm"
+                                 >
+                                    <FiUser className="w-4 h-4" />
+                                    View All Properties
+                                 </Link>
                               </div>
                            </dl>
                         )}

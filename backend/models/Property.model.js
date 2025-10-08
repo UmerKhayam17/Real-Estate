@@ -44,7 +44,12 @@ propertySchema.pre('save', function(next) {
   next();
 });
 
-propertySchema.index({ title: 'text', description: 'text', 'address.city': 'text' });
-propertySchema.index({ location: '2dsphere' });
+// Create indexes
+// propertySchema.index({ location: '2dsphere' });
+// propertySchema.index({ agent: 1 });
+// propertySchema.index({ approved: 1 });
+// propertySchema.index({ type: 1 });
+// propertySchema.index({ saleOrRent: 1 });
+// propertySchema.index({ status: 1 });
 
 module.exports = mongoose.model('Property', propertySchema);

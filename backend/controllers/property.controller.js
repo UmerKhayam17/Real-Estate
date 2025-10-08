@@ -44,6 +44,14 @@ exports.getProperties = async (req, res, next) => {
 
     const filter = {};
 
+
+    if (req.user && req.user.role === 'dealer') {
+      filter.agent = req.user.id;
+      // console.log(`🔒 Dealer mode: Showing properties for dealer ${req.user.id}`);
+    } else {
+      // console.log(`👤 ${req.user ? req.user.role : 'Guest'} mode: Showing all properties`);
+    }
+
     // Search and filter parameters
     if (query.q) filter.$text = { $search: query.q };
     if (query.city) filter['address.city'] = query.city;
@@ -60,8 +68,6 @@ exports.getProperties = async (req, res, next) => {
       if (query.minPrice) filter.price.$gte = Number(query.minPrice);
       if (query.maxPrice) filter.price.$lte = Number(query.maxPrice);
     }
-
-    // Location-based search
     if (query.lat && query.lng) {
       const meters = query.radius ? Number(query.radius) * 1000 : 5000;
       filter.location = {
@@ -71,6 +77,10 @@ exports.getProperties = async (req, res, next) => {
         }
       };
     }
+    if (query.agent) {
+      filter.agent = query.agent;
+      console.log(`🔍 Filtering by agent: ${query.agent}`);
+    }
 
     // Sorting
     let sortObj = { createdAt: -1 };
@@ -79,12 +89,17 @@ exports.getProperties = async (req, res, next) => {
     if (query.sort === 'views') sortObj = { views: -1 };
 
     const skip = (page - 1) * limit;
+
+    console.log('🎯 FINAL MONGO FILTER:', JSON.stringify(filter, null, 2));
+
     const total = await Property.countDocuments(filter);
     const items = await Property.find(filter)
       .skip(skip)
       .limit(limit)
       .sort(sortObj)
       .populate('agent', 'name email phone');
+
+    console.log(`📊 Found ${items.length} properties out of ${total} total`);
 
     res.json({
       total,
@@ -93,6 +108,7 @@ exports.getProperties = async (req, res, next) => {
       items
     });
   } catch (err) {
+    console.error('❌ GET PROPERTIES ERROR:', err);
     next(err);
   }
 };
@@ -114,7 +130,6 @@ exports.getProperty = async (req, res, next) => {
 };
 
 // UPDATE property
-// backend/controllers/property.controller.js - UPDATE the updateProperty function
 exports.updateProperty = async (req, res, next) => {
   try {
     const property = await Property.findById(req.params.id);
@@ -256,13 +271,6 @@ exports.updateProperty = async (req, res, next) => {
     }
 
     await property.save();
-
-    // Log the final state for debugging
-    console.log('✅ Final property state:', {
-      approved: property.approved,
-      location: property.location,
-      features: property.features
-    });
 
     res.json(property);
   } catch (err) {
