@@ -24,6 +24,7 @@ import {
 import { getImageUrl , getPropertyImageUrl } from '@/utils/imageUtils';
 import ImageWithFallback from '@/app/components/common/ImageWithFallback';
 import Link from 'next/link';
+import Router from 'next/router';
 import { useParams, useRouter } from 'next/navigation';
 
 const PropertyDetailsPage = () => {
@@ -365,6 +366,7 @@ const PropertyDetailsPage = () => {
                               <div className="flex items-center gap-2">
                                  <Link
                                     href={`/properties/agent/${property.agent?._id}`}
+                                    onClick={() => router.push(`/properties/agent/${property.agent?._id}`)}
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm"
                                  >
                                     <FiUser className="w-4 h-4" />

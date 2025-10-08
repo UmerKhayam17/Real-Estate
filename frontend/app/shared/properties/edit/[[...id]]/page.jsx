@@ -1,4 +1,4 @@
-// app/(pages)/dealer/properties/form/[[...id]]/page.jsx
+// app/shared/dealer/properties/form/[[...id]]/page.jsx
 'use client'
 
 import React, { useEffect, useState } from 'react';

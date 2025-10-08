@@ -1,4 +1,4 @@
-// app/(pages)/properties/page.jsx
+// app/shared/properties/page.jsx
 'use client';
 
 import React, { useState, useMemo } from 'react';

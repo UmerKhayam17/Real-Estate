@@ -51,11 +51,11 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+              <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
                 <span className="text-white font-bold text-lg">α</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="text-xl font-bold bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent">
                   Alpha Properties
                 </span>
                 <span className="text-xs text-gray-500 -mt-1">Premium Real Estate</span>
@@ -79,7 +79,7 @@ const Navbar = () => {
                       onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                       className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                     >
-                      <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center shadow-sm">
+                      <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-sky-500 rounded-full flex items-center justify-center shadow-sm">
                         <span className="text-white font-bold text-sm">
                           {user.name?.charAt(0).toUpperCase() || 'U'}
                         </span>
@@ -100,7 +100,7 @@ const Navbar = () => {
 
                 {/* Mobile User Info */}
                 <div className="md:hidden flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-sky-500 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold text-sm">
                       {user.name?.charAt(0).toUpperCase() || 'U'}
                     </span>
@@ -114,13 +114,13 @@ const Navbar = () => {
               <div className="flex items-center space-x-3">
                 <Link
                   href="/auth/login"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg font-medium transition-colors duration-200 hover:bg-gray-50"
+                  className="text-gray-600 hover:text-sky-600 px-3 py-2 rounded-lg font-medium transition-colors duration-200 hover:bg-gray-50"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="bg-gradient-to-r from-sky-600 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:from-sky-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   Sign Up Free
                 </Link>
@@ -150,21 +150,21 @@ const Navbar = () => {
             <div className="flex flex-col space-y-1">
               <Link
                 href="/properties"
-                className="px-4 py-3 text-gray-700 hover:text-blue-600 font-medium rounded-lg transition-colors duration-200 hover:bg-blue-50"
+                className="px-4 py-3 text-gray-700 hover:text-sky-600 font-medium rounded-lg transition-colors duration-200 hover:bg-sky-50"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Properties
               </Link>
               <Link
                 href="/about"
-                className="px-4 py-3 text-gray-700 hover:text-blue-600 font-medium rounded-lg transition-colors duration-200 hover:bg-blue-50"
+                className="px-4 py-3 text-gray-700 hover:text-sky-600 font-medium rounded-lg transition-colors duration-200 hover:bg-sky-50"
                 onClick={() => setIsMenuOpen(false)}
               >
                 About Us
               </Link>
               <Link
                 href="/contact"
-                className="px-4 py-3 text-gray-700 hover:text-blue-600 font-medium rounded-lg transition-colors duration-200 hover:bg-blue-50"
+                className="px-4 py-3 text-gray-700 hover:text-sky-600 font-medium rounded-lg transition-colors duration-200 hover:bg-sky-50"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Contact
@@ -176,14 +176,14 @@ const Navbar = () => {
                   <Link
                     href={user.role === 'admin' ? '/admin/dashboard' : 
                           user.role === 'dealer' ? '/dealer/dashboard' : '/dashboard'}
-                    className="px-4 py-3 text-gray-700 hover:text-blue-600 font-medium rounded-lg transition-colors duration-200 hover:bg-blue-50"
+                    className="px-4 py-3 text-gray-700 hover:text-sky-600 font-medium rounded-lg transition-colors duration-200 hover:bg-sky-50"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Dashboard
                   </Link>
                   <Link
                     href="/profile"
-                    className="px-4 py-3 text-gray-700 hover:text-blue-600 font-medium rounded-lg transition-colors duration-200 hover:bg-blue-50"
+                    className="px-4 py-3 text-gray-700 hover:text-sky-600 font-medium rounded-lg transition-colors duration-200 hover:bg-sky-50"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Profile Settings

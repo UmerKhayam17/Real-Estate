@@ -1,5 +1,5 @@
 // app/shared/properties/page.jsx
-import PropertiesPage from '@/app/shared/properties/get-all/page';
+import PropertiesPage from './get-all/page';
 
 const AllProperties = () => {
   return (

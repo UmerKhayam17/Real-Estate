@@ -1,5 +1,5 @@
-// app/(pages)/properties/agent/[agentId]/page.jsx
-import PropertiesPage from '@/app/(pages)/dealer/properties/get-all/page';
+// app/shared/properties/agent/[agentId]/page.jsx
+import PropertiesPage from '@/app/shared/properties/get-all/page';
 
 export default function AgentProperties({ params }) {
    const { agentId } = params;
