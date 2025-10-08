@@ -1,4 +1,4 @@
-// app/shared/properties/page.jsx
+// app/dealer/properties/page.jsx
 import PropertiesPage from '@/app/shared/properties/get-all/page';
 
 const AllProperties = () => {
