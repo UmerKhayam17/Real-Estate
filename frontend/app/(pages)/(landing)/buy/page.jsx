@@ -1,3 +1,5 @@
+// buy/page.jsx
+import React from 'react'
 import PropertiesPage from "@/app/(pages)/dealer/properties/get-all/page"
 
 export default function BuyPage() {
@@ -5,11 +7,11 @@ export default function BuyPage() {
       <div className="min-h-screen bg-background pt-16">
          <PropertiesPage
             showOnlyApproved={true}
-            title="Verified Properties"
-            description="Browse through our collection of verified and approved properties"
+            filterSaleOrRent="sale"
+            title="Properties for Sale"
+            description="Browse through verified properties available for purchase"
             showAddButton={false}
             showEditButton={false}
-
          />
       </div>
    )

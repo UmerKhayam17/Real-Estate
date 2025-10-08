@@ -114,7 +114,6 @@ exports.getProperty = async (req, res, next) => {
 };
 
 // UPDATE property
-// backend/controllers/property.controller.js - UPDATE the updateProperty function
 exports.updateProperty = async (req, res, next) => {
   try {
     const property = await Property.findById(req.params.id);
@@ -256,13 +255,6 @@ exports.updateProperty = async (req, res, next) => {
     }
 
     await property.save();
-
-    // Log the final state for debugging
-    console.log('✅ Final property state:', {
-      approved: property.approved,
-      location: property.location,
-      features: property.features
-    });
 
     res.json(property);
   } catch (err) {
