@@ -44,7 +44,7 @@ exports.sendMail = async (options) => {
 
     const info = await transporter.sendMail(mailOptions);
     console.log(`📧 Email successfully sent to ${options.to}`);
-    
+
     return info;
   } catch (err) {
     console.error("❌ Email sending failed:", err.message);
@@ -69,7 +69,7 @@ exports.emailTemplates = {
       </div>
     `,
   }),
-  
+
   welcome: (name) => ({
     subject: "Welcome to Our Platform 🎉",
     text: `Welcome ${name || "User"}! Your account has been successfully created.`,

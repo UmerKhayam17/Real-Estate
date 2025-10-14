@@ -1,6 +1,5 @@
 // backend/controllers/property.controller.js
 const Property = require('../models/Property.model');
-const Inquiry = require('../models/Inquiry.model');
 const fs = require('fs');
 const path = require('path');
 
@@ -47,7 +46,7 @@ exports.getProperties = async (req, res, next) => {
 
     if (req.user && req.user.role === 'dealer') {
       filter.agent = req.user.id;
-      // console.log(`🔒 Dealer mode: Showing properties for dealer ${req.user.id}`);
+     
     } else {
       // console.log(`👤 ${req.user ? req.user.role : 'Guest'} mode: Showing all properties`);
     }
@@ -305,29 +304,6 @@ exports.deleteProperty = async (req, res, next) => {
 
     await property.deleteOne();
     res.json({ message: 'Property deleted successfully' });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// create inquiry (lead)
-exports.contactProperty = async (req, res, next) => {
-  try {
-    const property = await Property.findById(req.params.id);
-    if (!property) return res.status(404).json({ message: 'Property not found' });
-
-    const data = {
-      property: property._id,
-      fromUser: req.user ? req.user.id : null,
-      name: req.body.name,
-      email: req.body.email,
-      phone: req.body.phone,
-      message: req.body.message
-    };
-
-    const inquiry = await Inquiry.create(data);
-    // TODO: notify agent (email/SMS)
-    res.status(201).json(inquiry);
   } catch (err) {
     next(err);
   }
