@@ -1,4 +1,4 @@
-// app/(pages)/properties/[propertyId]/page.jsx
+// app/shared/properties/[propertyId]/page.jsx
 'use client';
 
 import React, { useState } from 'react';
@@ -21,12 +21,12 @@ import {
    MdLocationOn,
    MdVerified
 } from 'react-icons/md';
-import { getImageUrl , getPropertyImageUrl } from '@/utils/imageUtils';
+import { getImageUrl, getPropertyImageUrl } from '@/utils/imageUtils';
 import ImageWithFallback from '@/app/components/common/ImageWithFallback';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 
-const PropertyDetailsPage = () => {
+const PropertyDetailsContent = () => {
    const params = useParams();
    const router = useRouter();
    const propertyId = params.propertyId;
@@ -51,7 +51,7 @@ const PropertyDetailsPage = () => {
    const mainImageUrl = images[selectedImageIndex]?.url ?
       getImageUrl(images[selectedImageIndex].url) :
       getPropertyImageUrl(property);
-      
+
    if (isLoading) {
       return (
          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -70,7 +70,7 @@ const PropertyDetailsPage = () => {
                <h2 className="text-xl font-semibold text-gray-900">Property Not Found</h2>
                <p className="text-gray-600 mt-2">The property you're looking for doesn't exist.</p>
                <Link
-                  href="/properties"
+                  href={`/properties`}
                   className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
                >
                   <FiArrowLeft className="w-4 h-4" />
@@ -105,7 +105,7 @@ const PropertyDetailsPage = () => {
             return { color: 'text-gray-600 bg-gray-50', text: status };
       }
    };
-   
+
    // Get coordinates for map
    const coordinates = property.location?.coordinates || [];
    const statusInfo = getStatusInfo(property.status);
@@ -125,7 +125,7 @@ const PropertyDetailsPage = () => {
                   </button>
                   <div className="h-6 w-px bg-gray-300"></div>
                   <Link
-                     href="/properties"
+                     href={`/properties`}
                      className="text-gray-600 hover:text-gray-900 transition-colors"
                   >
                      All Properties
@@ -409,6 +409,15 @@ const PropertyDetailsPage = () => {
             </div>
          </div>
       </div>
+   );
+};
+
+// Wrap the content with the layout
+const PropertyDetailsPage = () => {
+   return (
+      <>
+         <PropertyDetailsContent />
+      </>
    );
 };
 

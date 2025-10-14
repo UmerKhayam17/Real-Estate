@@ -1,4 +1,4 @@
-// app/(pages)/properties/page.jsx
+// app/shared/properties/page.jsx
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -199,7 +199,7 @@ const PropertiesPage = ({
 
                   {showAddButton && (
                      <Link
-                        href="/dealer/properties/create"
+                        href={`/properties/create`}
                         className="mt-4 sm:mt-0 inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                      >
                         <FiPlus className="w-5 h-5" />

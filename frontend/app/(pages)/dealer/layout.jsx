@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Navbar from '@/app/components/layout/Navbar';
 import Sidebar from '@/app/components/layout/Sidebar';
 
-export default function LayoutWrapper({ children }) {
+export default function DealerLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (

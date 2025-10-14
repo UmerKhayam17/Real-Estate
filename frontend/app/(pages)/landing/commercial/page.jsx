@@ -1,5 +1,5 @@
 // commercial/page.jsx
-import PropertiesPage from "@/app/(pages)/dealer/properties/get-all/page"
+import PropertiesPage from "@/app/(pages)/properties/get-all/page"
 
 export default function CommercialProperties() {
    return (
