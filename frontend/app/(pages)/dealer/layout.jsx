@@ -20,7 +20,7 @@ export default function DealerLayout({ children }) {
         {sidebarOpen && (
           <div className="lg:hidden fixed inset-0 z-40">
             <div
-              className="fixed inset-0 bg-neutral-950/20"
+              className="fixed inset-0 bg-neutral-950/20 backdrop-blur-lg"
               onClick={() => setSidebarOpen(false)}
             />
             <div className="fixed inset-y-0 left-0 z-50 w-64 h-full">

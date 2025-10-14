@@ -19,7 +19,7 @@ export default function AdminLayout({ children }) {
         {sidebarOpen && (
           <div className="lg:hidden fixed inset-0 z-40">
             <div 
-              className="fixed inset-0 bg-black bg-opacity-50"
+              className="fixed inset-0 bg-black/20 backdrop-blur-lg"
               onClick={() => setSidebarOpen(false)}
             />
             <div className="fixed inset-y-0 left-0 z-50 w-64 h-full">

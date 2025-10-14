@@ -77,7 +77,7 @@ const Sidebar = () => {
                         href={item.href}
                         className={`flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 group ${
                             pathname === item.href
-                                ? 'bg-gradient-to-r from-blue-50 to-blue-25 text-blue-600 border-r-4 border-blue-600 shadow-sm'
+                                ? 'bg-gradient-to-l from-sky-50 to-sky-25 text-sky-600 border-r-4 border-sky-600 shadow-sm'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm'
                         }`}
                         title={isCollapsed ? item.name : ''}

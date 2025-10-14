@@ -1,7 +1,8 @@
 // lib/auth.js
 export const isAuthenticated = () => {
   if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem('token');
+  const token = localStorage.getItem('token');
+  return !!token;
 };
 
 export const getUser = () => {
@@ -20,15 +21,17 @@ export const logout = () => {
 export const getUserRole = () => {
   if (typeof window === 'undefined') return null;
 
-  const token = localStorage.getItem('token');
-  if (!token) return null;
-
   try {
-    // Decode the token to get user role
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.role || 'user';
+    const token = localStorage.getItem('token');
+    if (token) {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.role) return payload.role;
+    }
+    
+    const user = getUser();
+    return user?.role || null;
   } catch (error) {
-    console.error('Error decoding token:', error);
+    console.error('Error getting user role:', error);
     return null;
   }
 };
