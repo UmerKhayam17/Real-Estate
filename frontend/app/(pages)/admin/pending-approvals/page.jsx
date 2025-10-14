@@ -1,6 +1,6 @@
 // peding-approvals/page.jsx
 import React from 'react'
-import PropertiesPage from '@/app/shared/properties/get-all/page'
+import PropertiesPage from '@/app/(pages)/properties/get-all/page'
 
 export default function Pedingapprovals() {
   return (

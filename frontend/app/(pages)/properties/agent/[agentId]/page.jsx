@@ -1,7 +1,7 @@
 // app/shared/properties/agent/[agentId]/page.jsx
-import PropertiesPage from '@/app/shared/properties/get-all/page';
+import PropertiesPage from '@/app/(pages)/properties/get-all/page';
 
-export default function AgentProperties({ params }) {
+const AgentPropertiesContent = ({ params }) => {
    const { agentId } = params;
 
    return (
@@ -11,7 +11,17 @@ export default function AgentProperties({ params }) {
          description="Browse properties listed by this agent"
          showAddButton={false}
          showEditButton={false}
-         hideFilters={true} // Hide filters for agent-specific view
+         hideFilters={true}
       />
    );
-}
+};
+
+const AgentProperties = ({ params }) => {
+   return (
+      <>
+         <AgentPropertiesContent params={params} />
+      </>
+   );
+};
+
+export default AgentProperties;

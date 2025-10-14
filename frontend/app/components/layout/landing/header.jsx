@@ -9,11 +9,11 @@ const Header = () => {
    const router = useRouter()
 
    const exploreItems = [
-      { name: "Find Developers", path: "/developers" },
-      { name: "Area Insights", path: "/area-insights" },
-      { name: "Property Blog", path: "/blog" },
-      { name: "Insights Hub", path: "/insights" },
-      { name: "Know your rights", path: "/rights" }
+      { name: "Find Developers", path: "/landing/developers" },
+      { name: "Area Insights", path: "/landing/area-insights" },
+      { name: "Property Blog", path: "/landing/blog" },
+      { name: "Insights Hub", path: "/landing/insights" },
+      { name: "Know your rights", path: "/landing/rights" }
    ]
 
    const handleNavigation = (path) => {
@@ -27,35 +27,35 @@ const Header = () => {
                {/* Left side - Navigation links */}
                <div className="flex items-center space-x-8">
                   <Link
-                     href="/buy"
+                     href="/landing/buy"
                      className="text-text-primary hover:text-primary-600 font-medium transition-colors duration-200 py-2"
                   >
                      Buy
                   </Link>
 
                   <Link
-                     href="/rent"
+                     href="/landing/rent"
                      className="text-text-primary hover:text-primary-600 font-medium transition-colors duration-200 py-2"
                   >
                      Rent
                   </Link>
 
                   <Link
-                     href="/commercial"
+                     href="/landing/commercial"
                      className="text-text-primary hover:text-primary-600 font-medium transition-colors duration-200 py-2"
                   >
                      Commercial
                   </Link>
 
                   <Link
-                     href="/new-projects"
+                     href="/landing/new-projects"
                      className="text-text-primary hover:text-primary-600 font-medium transition-colors duration-200 py-2"
                   >
                      New projects
                   </Link>
 
                   <Link
-                     href="/find-agent"
+                     href="/landing/find-agent"
                      className="text-text-primary hover:text-primary-600 font-medium transition-colors duration-200 py-2"
                   >
                      Find agent

@@ -1,13 +1,13 @@
 // app/dealer/properties/page.jsx
-import PropertiesPage from '@/app/shared/properties/get-all/page';
+import PropertiesPage from '@/app/(pages)/properties/get-all/page';
 
 const AllProperties = () => {
   return (
     <PropertiesPage
-      showAll={true} 
+      showAll={true}
       title="All Properties"
       description="Manage all properties in the system"
-      showAddButton={true} 
+      showAddButton={true}
       showEditButton={true}
     />
   );

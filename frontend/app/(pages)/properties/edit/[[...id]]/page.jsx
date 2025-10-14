@@ -1,4 +1,4 @@
-// app/shared/dealer/properties/form/[[...id]]/page.jsx
+// app/shared/dealer/properties/edit/[[...id]]/page.jsx
 'use client'
 
 import React, { useEffect, useState } from 'react';
@@ -16,9 +16,9 @@ import {
    AdminSection
 } from '../../components/PropertyFormSections';
 import { toast } from 'react-hot-toast';
-import { isAuthenticated, getUserRole } from '@/lib/auth'; // Import directly from lib
+import { isAuthenticated, getUserRole } from '@/lib/auth';
 
-const PropertyForm = () => {
+const PropertyFormContent = () => {
    const router = useRouter();
    const params = useParams();
    const propertyId = params.id?.[0];
@@ -75,7 +75,7 @@ const PropertyForm = () => {
 
          if (result.success) {
             toast.success(`Property ${isEditMode ? 'updated' : 'created'} successfully!`);
-            router.push('/dealer/properties');
+            router.push(`/properties`);
          } else {
             toast.error(result.error || `Failed to ${isEditMode ? 'update' : 'create'} property`);
          }
@@ -281,6 +281,12 @@ const PropertyForm = () => {
             </form>
          </div>
       </div>
+   );
+};
+
+const PropertyForm = () => {
+   return (
+         <PropertyFormContent />
    );
 };
 

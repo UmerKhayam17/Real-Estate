@@ -90,16 +90,12 @@ exports.getProperties = async (req, res, next) => {
 
     const skip = (page - 1) * limit;
 
-    console.log('🎯 FINAL MONGO FILTER:', JSON.stringify(filter, null, 2));
-
     const total = await Property.countDocuments(filter);
     const items = await Property.find(filter)
       .skip(skip)
       .limit(limit)
       .sort(sortObj)
       .populate('agent', 'name email phone');
-
-    console.log(`📊 Found ${items.length} properties out of ${total} total`);
 
     res.json({
       total,

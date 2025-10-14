@@ -1,4 +1,4 @@
-// components/property/PropertyCard.jsx
+// components/PropertyCard.jsx
 'use client';
 
 import React, { useState } from 'react';
@@ -73,7 +73,7 @@ const PropertyCard = ({ property, showEditButton = false }) => {
 
   // Handle card click
   const handleCardClick = () => {
-    router.push(`/shared/properties/${property._id}`);
+    router.push(`/properties/${property._id}`);
   };
 
   const statusInfo = getStatusInfo(property.status);
@@ -119,7 +119,7 @@ const PropertyCard = ({ property, showEditButton = false }) => {
         {/* Edit Button - Only show if prop is true */}
         {showEditButton && (
           <Link
-            href={`/shared/properties/edit/${property._id}`}
+            href={`/properties/${property._id}`}
             className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white px-3 py-2 rounded-full text-xs font-medium text-gray-700 flex items-center gap-1 transition-colors"
             onClick={(e) => e.stopPropagation()} // Prevent card click when editing
           >
@@ -236,7 +236,7 @@ const PropertyCard = ({ property, showEditButton = false }) => {
           {/* Make agent info clickable */}
           {property.agent && (
             <Link
-              href={`/shared/properties/agent/${property.agent._id}`}
+              href={`/properties/${property.agent._id}`}
               className="flex items-center gap-1 text-gray-400 text-xs hover:text-primary-600 transition-colors"
               onClick={(e) => e.stopPropagation()} // Prevent card click
             >
