@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { FiUpload, FiX, FiImage, FiVideo, FiFile } from 'react-icons/fi';
-import { getImageUrl } from '@/utils/imageUtils'; // Import the function
+import { getImageUrl } from '@/app/utils/imageUtils'; // Import the function
 
 const FileUpload = ({
    label = 'Upload Files',

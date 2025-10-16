@@ -3,8 +3,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { usePropertyForm } from '@/hooks/usePropertyForm';
-import { useProperty } from '@/Queries/propertyQuery';
+import { usePropertyForm } from '@/app/hooks/usePropertyForm';
+import { useProperty } from '@/app/Queries/propertyQuery';
 import LocationPicker from '../../components/LocationPicker';
 import { Button, ButtonGroup } from '@/app/components/common/Buttons';
 import {
@@ -16,7 +16,7 @@ import {
    AdminSection
 } from '../../components/PropertyFormSections';
 import { toast } from 'react-hot-toast';
-import { isAuthenticated, getUserRole } from '@/lib/auth';
+import { isAuthenticated, getUserRole } from '@/app/lib/auth';
 
 const PropertyFormContent = () => {
    const router = useRouter();
@@ -286,7 +286,7 @@ const PropertyFormContent = () => {
 
 const PropertyForm = () => {
    return (
-         <PropertyFormContent />
+      <PropertyFormContent />
    );
 };
 

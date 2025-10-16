@@ -1,6 +1,6 @@
 // mutations/propertyMutation.js
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api, { getAuthHeaders } from "@/lib/axios";
+import api, { getAuthHeaders } from "@/app/lib/axios";
 
 // mutations/propertyMutation.js - Also fix create mutation
 export const useCreateProperty = () => {
@@ -180,4 +180,3 @@ export const useDeleteProperty = () => {
       },
    });
 };
-  

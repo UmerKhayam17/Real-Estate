@@ -1,7 +1,7 @@
 // Queries/userQuery.js
 import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/axios";
-import { useAuth } from "@/hooks/useAuth";
+import api from "@/app/lib/axios";
+import { useAuth } from "@/app/hooks/useAuth";
 
 export const useGetProfile = () => {
   const { logout } = useAuth();

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useProperty } from '@/Queries/propertyQuery';
+import { useProperty } from '@/app/Queries/propertyQuery';
 import {
    FiArrowLeft,
    FiMapPin,
@@ -21,7 +21,7 @@ import {
    MdLocationOn,
    MdVerified
 } from 'react-icons/md';
-import { getImageUrl, getPropertyImageUrl } from '@/utils/imageUtils';
+import { getImageUrl, getPropertyImageUrl } from '@/app/utils/imageUtils';
 import ImageWithFallback from '@/app/components/common/ImageWithFallback';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';

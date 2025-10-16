@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { getUser } from '@/lib/auth';
+import { getUser } from '@/app/lib/auth';
 
 const DealerDashboard = () => {
   const [stats, setStats] = useState({
@@ -11,7 +11,7 @@ const DealerDashboard = () => {
     activeBookings: 0,
     revenue: 0
   });
-  
+
   const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = getUser();
@@ -30,7 +30,7 @@ const DealerDashboard = () => {
             activeBookings: 234,
             revenue: 125430
           });
-          
+
           setRecentActivities([
             { id: 1, type: 'new_dealer', message: 'John Doe applied for dealer account', time: '2 mins ago' },
             { id: 2, type: 'property_added', message: 'New property added in Downtown', time: '15 mins ago' },
@@ -38,7 +38,7 @@ const DealerDashboard = () => {
             { id: 4, type: 'user_registered', message: 'New user registered', time: '2 hours ago' },
             { id: 5, type: 'dealer_approved', message: 'Dealer ABC Realty approved', time: '3 hours ago' }
           ]);
-          
+
           setLoading(false);
         }, 1000);
       } catch (error) {
@@ -92,7 +92,7 @@ const DealerDashboard = () => {
           color="hover:shadow-md transition-shadow duration-200"
           subtitle="+24 this month"
         />
-        
+
         <StatCard
           title="Total Dealers"
           value={stats.totalDealers}
@@ -100,7 +100,7 @@ const DealerDashboard = () => {
           color="hover:shadow-md transition-shadow duration-200"
           subtitle="89 approved dealers"
         />
-        
+
         <StatCard
           title="Pending Approvals"
           value={stats.pendingDealers}
@@ -108,7 +108,7 @@ const DealerDashboard = () => {
           color="hover:shadow-md transition-shadow duration-200 border-l-4 border-yellow-500"
           subtitle="Needs attention"
         />
-        
+
         <StatCard
           title="Total Properties"
           value={stats.totalProperties.toLocaleString()}
@@ -116,7 +116,7 @@ const DealerDashboard = () => {
           color="hover:shadow-md transition-shadow duration-200"
           subtitle="567 active listings"
         />
-        
+
         <StatCard
           title="Active Bookings"
           value={stats.activeBookings}
@@ -124,7 +124,7 @@ const DealerDashboard = () => {
           color="hover:shadow-md transition-shadow duration-200"
           subtitle="Current bookings"
         />
-        
+
         <StatCard
           title="Total Revenue"
           value={`$${stats.revenue.toLocaleString()}`}
@@ -142,17 +142,17 @@ const DealerDashboard = () => {
             <span className="text-2xl mb-2">👥</span>
             <span className="text-sm font-medium text-gray-700">Manage Users</span>
           </button>
-          
+
           <button className="flex flex-col items-center justify-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors duration-200">
             <span className="text-2xl mb-2">🏢</span>
             <span className="text-sm font-medium text-gray-700">Dealer Approvals</span>
           </button>
-          
+
           <button className="flex flex-col items-center justify-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors duration-200">
             <span className="text-2xl mb-2">🏠</span>
             <span className="text-sm font-medium text-gray-700">Properties</span>
           </button>
-          
+
           <button className="flex flex-col items-center justify-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors duration-200">
             <span className="text-2xl mb-2">📊</span>
             <span className="text-sm font-medium text-gray-700">Analytics</span>
@@ -191,17 +191,17 @@ const DealerDashboard = () => {
               <span className="text-sm font-medium text-gray-700">Application</span>
               <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Operational</span>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
               <span className="text-sm font-medium text-gray-700">Database</span>
               <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Healthy</span>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
               <span className="text-sm font-medium text-gray-700">Pending Tasks</span>
               <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">12 items</span>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
               <span className="text-sm font-medium text-gray-700">Server Load</span>
               <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">45%</span>

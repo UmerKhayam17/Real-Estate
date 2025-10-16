@@ -1,13 +1,13 @@
 // app/components/common/ProtectedRoute.jsx
 'use client';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-export default function ProtectedRoute({ 
-  children, 
-  requiredRole, 
-  redirectTo = '/auth/login' 
+export default function ProtectedRoute({
+  children,
+  requiredRole,
+  redirectTo = '/auth/login'
 }) {
   const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();

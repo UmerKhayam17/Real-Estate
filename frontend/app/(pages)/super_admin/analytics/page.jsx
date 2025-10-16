@@ -1,11 +1,11 @@
 import React from 'react'
 
-const dealers = () => {
+const page = () => {
   return (
     <div>
-    
+      Analytics
     </div>
   )
 }
 
-export default dealers
+export default page

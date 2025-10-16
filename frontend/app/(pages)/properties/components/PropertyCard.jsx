@@ -19,7 +19,7 @@ import {
   MdSell,
   MdHouse
 } from 'react-icons/md';
-import { getPropertyImageUrl } from '@/utils/imageUtils';
+import { getPropertyImageUrl } from '@/app/utils/imageUtils';
 import ImageWithFallback from '@/app/components/common/ImageWithFallback';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

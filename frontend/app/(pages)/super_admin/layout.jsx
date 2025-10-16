@@ -18,7 +18,7 @@ export default function AdminLayout({ children }) {
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div className="lg:hidden fixed inset-0 z-40">
-            <div 
+            <div
               className="fixed inset-0 bg-black/20 backdrop-blur-lg"
               onClick={() => setSidebarOpen(false)}
             />
@@ -39,7 +39,7 @@ export default function AdminLayout({ children }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          
+
           <div className="p-6 pt-20 lg:pt-6">
             {children}
           </div>

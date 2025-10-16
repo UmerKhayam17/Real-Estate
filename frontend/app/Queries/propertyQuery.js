@@ -1,6 +1,6 @@
 // queries/propertyQuery.js
 import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/axios";
+import api from "@/app/lib/axios";
 
 // Get all properties with filters
 export const useProperties = (filters = {}) => {

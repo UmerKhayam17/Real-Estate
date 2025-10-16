@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { isAuthenticated, getUserRole } from '@/lib/auth';
-import AdminLayout from '../admin/layout';
+import { isAuthenticated, getUserRole } from '@/app/lib/auth';
+import AdminLayout from '../super_admin/layout';
 import DealerLayout from '../dealer/layout';
 import LandingLayout from '../landing/layout';
 

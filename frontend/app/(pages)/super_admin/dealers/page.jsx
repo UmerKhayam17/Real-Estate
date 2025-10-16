@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
-import { getUser } from '@/lib/auth';
-import api from "@/lib/axios";
+import { getUser } from '@/app/lib/auth';
+import api from "@/app/lib/axios";
 
 const UsersPage = () => {
     const [users, setUsers] = useState([]);
@@ -42,7 +42,7 @@ const UsersPage = () => {
 
     useEffect(() => {
         if (user?.role !== 'admin') return;
-        
+
         // Add debounce to prevent excessive API calls when typing
         const timeoutId = setTimeout(() => {
             fetchUsers();
@@ -60,21 +60,13 @@ const UsersPage = () => {
         setFilters(prev => ({ ...prev, search: value }));
     };
 
-    if (user?.role !== 'admin') {
+    if (user?.role !== 'super_admin') {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
                     <p className="text-gray-600">You don't have permission to view this page.</p>
                 </div>
-            </div>
-        );
-    }
-
-    if (loading && users.length === 0) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
         );
     }
@@ -149,8 +141,8 @@ const UsersPage = () => {
                                     </td>
                                     <td className="p-4">
                                         <span className={`px-2 py-1 rounded-full text-xs ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                                                user.role === 'dealer' ? 'bg-blue-100 text-blue-800' :
-                                                    'bg-gray-100 text-gray-800'
+                                            user.role === 'dealer' ? 'bg-blue-100 text-blue-800' :
+                                                'bg-gray-100 text-gray-800'
                                             }`}>
                                             {user.role}
                                         </span>
@@ -167,7 +159,7 @@ const UsersPage = () => {
                                                 <div>
                                                     <p className="font-medium">{user.dealerProfile.businessName}</p>
                                                     <span className={`px-2 py-1 rounded-full text-xs ${user.dealerProfile.isVerified ?
-                                                            'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                                        'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                                                         }`}>
                                                         {user.dealerProfile.isVerified ? 'Verified' : 'Pending'}
                                                     </span>

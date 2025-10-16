@@ -2,8 +2,8 @@
 'use client'
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { useCreateProperty, useUpdateProperty } from '@/mutations/propertyMutation';
-import { isAuthenticated } from '@/lib/auth';
+import { useCreateProperty, useUpdateProperty } from '@/app/mutations/propertyMutation';
+import { isAuthenticated } from '@/app/lib/auth';
 import { toast } from 'react-hot-toast';
 
 export const usePropertyForm = (existingProperty = null) => {
@@ -198,7 +198,7 @@ export const usePropertyForm = (existingProperty = null) => {
 
       try {
          console.log('🚀 SUBMITTING PROPERTY FORM - RAW FORM DATA:', formData);
-        
+
          let cleanedFeatures = [];
          if (Array.isArray(formData.features)) {
             cleanedFeatures = formData.features;

@@ -4,7 +4,7 @@ import './styles/globals.css'
 import './styles/style.css'
 import { TanstackProvider } from '@/app/components/providers/tanstack-provider'
 import { Toaster } from 'react-hot-toast'
-import { AuthProvider } from '../hooks/useAuth';
+import { AuthProvider } from './hooks/useAuth';
 
 
 const inter = Inter({
@@ -30,19 +30,19 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <body className="font-sans antialiased">
         <TanstackProvider>
-                    <AuthProvider>
-          {children}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-            }}
-          />
-                    </AuthProvider>
+          <AuthProvider>
+            {children}
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                },
+              }}
+            />
+          </AuthProvider>
 
         </TanstackProvider>
       </body>

@@ -1,8 +1,8 @@
 // app/(pages)/admin/users/page.jsx
 'use client';
 import { useState } from 'react';
-import ProtectedRoute from '../../../../app/components/common/ProtectedRoute';
-import { useGetAllUsers } from '../../../../Queries/userQuery';
+import ProtectedRoute from '../../../components/common/ProtectedRoute';
+import { useGetAllUsers } from '../../../Queries/userQuery';
 
 export default function AdminUsersPage() {
   const { data: users, isLoading, error } = useGetAllUsers();
@@ -13,10 +13,10 @@ export default function AdminUsersPage() {
   // Filter users based on search and filters
   const filteredUsers = users?.data?.filter(user => {
     const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'all'; // Add actual status logic when available
-    
+
     return matchesSearch && matchesRole && matchesStatus;
   });
 
@@ -44,7 +44,7 @@ export default function AdminUsersPage() {
   );
 
   return (
-    <ProtectedRoute requiredRole="admin">
+    <ProtectedRoute requiredRole="super_admin">
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header Section */}
@@ -68,7 +68,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center">
                 <div className="rounded-full bg-purple-100 p-3">
@@ -84,7 +84,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center">
                 <div className="rounded-full bg-green-100 p-3">
@@ -100,7 +100,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center">
                 <div className="rounded-full bg-orange-100 p-3">
@@ -208,13 +208,12 @@ export default function AdminUsersPage() {
                         <div className="text-sm text-gray-900">{user.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          user.role === 'admin' 
-                            ? 'bg-purple-100 text-purple-800'
-                            : user.role === 'dealer'
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
+                          ? 'bg-purple-100 text-purple-800'
+                          : user.role === 'dealer'
                             ? 'bg-blue-100 text-blue-800'
                             : 'bg-gray-100 text-gray-800'
-                        }`}>
+                          }`}>
                           {user.role}
                         </span>
                       </td>
@@ -238,7 +237,7 @@ export default function AdminUsersPage() {
                   ))}
                 </tbody>
               </table>
-              
+
               {(!filteredUsers || filteredUsers.length === 0) && (
                 <div className="text-center py-12">
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

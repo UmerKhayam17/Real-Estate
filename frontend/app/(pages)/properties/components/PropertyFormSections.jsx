@@ -8,7 +8,7 @@ import {
    Checkbox
 } from '@/app/components/common/FormFields';
 import FileUpload from '@/app/components/common/FileUpload';
-import { getImageUrl } from '@/utils/imageUtils';
+import { getImageUrl } from '@/app/utils/imageUtils';
 
 // Options for dropdowns
 export const PROPERTY_TYPES = [
@@ -527,7 +527,7 @@ export const FeaturesSection = ({ formData, handleArrayChange }) => {
             placeholder="Select features available"
             helperText="Choose all features that apply to this property"
          />
-        
+
       </div>
    );
 };

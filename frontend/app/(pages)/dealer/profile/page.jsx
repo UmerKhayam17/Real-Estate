@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import api from "../../../../lib/axios";
+import api from "../../../lib/axios";
 
 export default function DealerProfilePage() {
   const [form, setForm] = useState({
@@ -90,7 +90,7 @@ export default function DealerProfilePage() {
             onChange={(e) => setForm({ ...form, yearsInBusiness: e.target.value })}
           />
         </div>
-        
+
         <textarea
           placeholder="Business Description"
           required
@@ -98,7 +98,7 @@ export default function DealerProfilePage() {
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
-        
+
         <input
           type="text"
           placeholder="Business Address"
