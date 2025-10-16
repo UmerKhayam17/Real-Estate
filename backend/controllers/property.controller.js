@@ -45,10 +45,17 @@ exports.getProperties = async (req, res, next) => {
 
 
     if (req.user && req.user.role === 'dealer') {
+      // For dealers, only show their properties
       filter.agent = req.user.id;
-     
-    } else {
-      // console.log(`👤 ${req.user ? req.user.role : 'Guest'} mode: Showing all properties`);
+    } else if (req.user && req.user.role === 'company_admin') {
+      // Company admin can see all properties from dealers in their company
+      const companyDealers = await User.find({
+        companyId: req.user.companyId,
+        role: 'dealer'
+      }).select('_id');
+
+      const dealerIds = companyDealers.map(dealer => dealer._id);
+      filter.agent = { $in: dealerIds };
     }
 
     // Search and filter parameters
@@ -94,7 +101,14 @@ exports.getProperties = async (req, res, next) => {
       .skip(skip)
       .limit(limit)
       .sort(sortObj)
-      .populate('agent', 'name email phone');
+      .populate({
+        path: 'agent',
+        select: 'name email phone companyId',
+        populate: {
+          path: 'companyId',
+          select: 'name'
+        }
+      });
 
     res.json({
       total,

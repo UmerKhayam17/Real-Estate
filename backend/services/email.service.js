@@ -1,11 +1,11 @@
 const nodemailer = require("nodemailer");
 
 // Debug environment variables
-console.log('🔍 Email config check:', {
-  user: process.env.MAIL_USER ? '✓ Set' : '✗ Missing',
-  pass: process.env.MAIL_PASS ? '✓ Set' : '✗ Missing',
-  from: process.env.MAIL_FROM ? '✓ Set' : '✗ Missing'
-});
+// console.log('🔍 Email config check:', {
+//   user: process.env.MAIL_USER ? '✓ Set' : '✗ Missing',
+//   pass: process.env.MAIL_PASS ? '✓ Set' : '✗ Missing',
+//   from: process.env.MAIL_FROM ? '✓ Set' : '✗ Missing'
+// });
 
 // ✅ Configure transporter with explicit settings
 const transporter = nodemailer.createTransport({
@@ -27,7 +27,7 @@ transporter.verify(function (error, success) {
     console.log('3. Verify 2-factor authentication is enabled on Gmail');
     console.log('4. Check if "Less secure app access" is enabled (if available)');
   } else {
-    console.log('✅ Email transporter is ready to send messages');
+    // console.log('✅ Email transporter is ready to send messages');
   }
 });
 
@@ -129,5 +129,39 @@ exports.emailTemplates = {
         <p style="font-size: 12px; color: #777;">This is an automated message, please do not reply.</p>
       </div>
     `,
+  }),
+
+  // Add to services/email.service.js
+newCompanyNotification: (adminName, ownerName, companyName, companyId) => ({
+    subject: "🏢 New Company Registration Requires Approval",
+    text: `Hello ${adminName}, a new company ${companyName} has been registered by ${ownerName}. Please review their application.`,
+    html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Hello ${adminName},</h2>
+      <p>A new company <strong>${companyName}</strong> has been registered by <strong>${ownerName}</strong>.</p>
+      <p>Please review their application in the admin panel.</p>
+      <p><strong>Company ID:</strong> ${companyId}</p>
+      <hr style="border: none; border-top: 1px solid #eee;">
+      <p style="font-size: 12px; color: #777;">This is an automated message, please do not reply.</p>
+    </div>
+  `,
+  }),
+
+  companyStatusUpdate: (ownerName, companyName, status, reason) => ({
+    subject: `Company Status Update: ${companyName}`,
+    text: `Hello ${ownerName}, your company ${companyName} status has been updated to ${status}. ${reason ? `Reason: ${reason}` : ''}`,
+    html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Hello ${ownerName},</h2>
+      <p>Your company <strong>${companyName}</strong> status has been updated to <strong>${status}</strong>.</p>
+      ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+      ${status === 'approved' ?
+        '<p>🎉 Congratulations! Your company has been approved. You can now login and start managing your dealers.</p>' :
+        '<p>Please contact support if you have any questions.</p>'
+      }
+      <hr style="border: none; border-top: 1px solid #eee;">
+      <p style="font-size: 12px; color: #777;">This is an automated message, please do not reply.</p>
+    </div>
+  `,
   })
 };

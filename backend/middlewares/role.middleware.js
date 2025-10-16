@@ -7,3 +7,11 @@ module.exports = (allowed = []) => (req, res, next) => {
   }
   next();
 };
+
+// Company-specific middleware
+module.exports.companyAccess = (req, res, next) => {
+  if (req.user.role === 'company_admin' && !req.user.companyId) {
+    return res.status(403).json({ message: 'Company admin not assigned to any company' });
+  }
+  next();
+};

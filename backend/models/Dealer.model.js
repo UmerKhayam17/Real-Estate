@@ -28,6 +28,30 @@ const dealerSchema = new mongoose.Schema(
     whatsappNumber: { type: String },
     cnic: { type: String, required: true },
     documents: [{ type: String }], // CNIC, License, etc.
+
+    // Company reference (optional - dealer may or may not belong to a company)
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      default: null
+    },
+
+    // Approval system
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+
+    // Who approved this dealer
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+
+    approvedAt: { type: Date, default: null },
+    rejectionReason: { type: String, default: '' },
     
     // Stats
     rating: { type: Number, default: 0 },
@@ -38,5 +62,9 @@ const dealerSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
- 
+
+// Index for better query performance
+dealerSchema.index({ companyId: 1, approvalStatus: 1 });
+dealerSchema.index({ approvalStatus: 1 }); 
+
 module.exports = mongoose.model('Dealer', dealerSchema);
