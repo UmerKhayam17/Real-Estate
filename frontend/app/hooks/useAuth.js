@@ -1,6 +1,5 @@
-// hooks/useAuth.js
 'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 const AuthContext = createContext();
 
@@ -8,44 +7,49 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    checkAuth();
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    if (typeof window !== 'undefined') {
+      window.location.href = '/auth/login';
+    }
   }, []);
 
-  const checkAuth = () => {
+  const checkAuth = useCallback(() => {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('token');
       const userData = localStorage.getItem('user');
-      
+
       if (token && userData) {
         try {
           setUser(JSON.parse(userData));
         } catch (error) {
           console.error('Error parsing user data:', error);
-          logout();
+          // Call logout directly instead of through the function reference
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
         }
       }
       setLoading(false);
     }
-  };
+  }, []); // Removed logout dependency
 
-  const login = (token, userData) => {
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  const login = useCallback((token, userData) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-  };
+  }, []);
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    window.location.href = '/auth/login';
-  };
-
-  const updateUser = (userData) => {
+  const updateUser = useCallback((userData) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-  };
+  }, []);
 
   const value = {
     user,

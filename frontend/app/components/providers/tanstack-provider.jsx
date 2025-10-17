@@ -17,7 +17,7 @@ export function TanstackProvider({ children }) {
         },
       },
     },
-  }));
+  })); 
 
   return (
     <QueryClientProvider client={queryClient}>

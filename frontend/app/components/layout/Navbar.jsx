@@ -85,9 +85,9 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-white/80 backdrop-blur-xl border-4  border-green-800 sticky top-0 z-50 shadow-sm">
-      <div className="mx-auto border-4 border-amber-800 px-4 sm:px-6 lg:px-8">
-        <div className="flex border-4 border-blue-800 justify-between items-center h-16">
+    <nav className="bg-white/80 backdrop-blur-xl border-b border-gray-300 sticky top-0 z-50 shadow-md">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
           {/* Left Section - Logo and Mobile Menu */}
           <div className="flex items-center space-x-4">
             {/* Mobile Menu Button */}
