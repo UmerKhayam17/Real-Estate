@@ -131,20 +131,50 @@ exports.emailTemplates = {
     `,
   }),
 
-  // Add to services/email.service.js
-newCompanyNotification: (adminName, ownerName, companyName, companyId) => ({
-    subject: "🏢 New Company Registration Requires Approval",
-    text: `Hello ${adminName}, a new company ${companyName} has been registered by ${ownerName}. Please review their application.`,
+  // services/email.service.js - Add new templates
+  companyRegistrationOtp: (ownerName, otp, companyName, planName, planPrice) => ({
+    subject: `Verify Your Company Registration - ${companyName}`,
+    text: `Hello ${ownerName}, Your OTP code is ${otp}. Company: ${companyName}, Plan: ${planName} (${planPrice === 0 ? 'Free' : '$' + planPrice}).`,
     html: `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Hello ${adminName},</h2>
-      <p>A new company <strong>${companyName}</strong> has been registered by <strong>${ownerName}</strong>.</p>
-      <p>Please review their application in the admin panel.</p>
-      <p><strong>Company ID:</strong> ${companyId}</p>
-      <hr style="border: none; border-top: 1px solid #eee;">
-      <p style="font-size: 12px; color: #777;">This is an automated message, please do not reply.</p>
-    </div>
-  `,
+     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+       <h2 style="color: #333;">Welcome to Our Platform!</h2>
+       <p>Hello ${ownerName},</p>
+       <p>Your company <strong>${companyName}</strong> has been registered successfully.</p>
+       <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+         <h3 style="margin: 0 0 10px 0;">Plan Details:</h3>
+         <p style="margin: 5px 0;"><strong>Plan:</strong> ${planName}</p>
+         <p style="margin: 5px 0;"><strong>Price:</strong> ${planPrice === 0 ? 'Free' : '$' + planPrice}</p>
+         <p style="margin: 5px 0;"><strong>Status:</strong> ${planPrice === 0 ? 'Active' : 'Pending Payment'}</p>
+       </div>
+       <p>Your OTP code is: <strong style="font-size: 18px; color: #007bff;">${otp}</strong></p>
+       <p>This code will expire in <strong>10 minutes</strong>.</p>
+       ${planPrice > 0 ? '<p>After verification, you will be redirected to complete the payment process.</p>' : ''}
+       <hr style="border: none; border-top: 1px solid #eee;">
+       <p style="font-size: 12px; color: #777;">This is an automated message, please do not reply.</p>
+     </div>
+   `,
+  }),
+
+  newCompanyRegistrationNotification: (adminName, ownerName, companyName, planName, planPrice, companyId) => ({
+    subject: "🏢 New Company Registration - Plan Selected",
+    text: `Hello ${adminName}, a new company ${companyName} has been registered by ${ownerName} with plan: ${planName} (${planPrice}).`,
+    html: `
+     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+       <h2 style="color: #333;">New Company Registration</h2>
+       <p>Hello ${adminName},</p>
+       <p>A new company <strong>${companyName}</strong> has been registered by <strong>${ownerName}</strong>.</p>
+       <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+         <h3 style="margin: 0 0 10px 0;">Selected Plan:</h3>
+         <p style="margin: 5px 0;"><strong>Plan:</strong> ${planName}</p>
+         <p style="margin: 5px 0;"><strong>Price:</strong> $${planPrice}</p>
+         <p style="margin: 5px 0;"><strong>Status:</strong> ${planPrice === 0 ? 'Active' : 'Pending Payment'}</p>
+       </div>
+       <p><strong>Company ID:</strong> ${companyId}</p>
+       <p>Please review their application in the admin panel.</p>
+       <hr style="border: none; border-top: 1px solid #eee;">
+       <p style="font-size: 12px; color: #777;">This is an automated message, please do not reply.</p>
+     </div>
+   `,
   }),
 
   companyStatusUpdate: (ownerName, companyName, status, reason) => ({

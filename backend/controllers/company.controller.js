@@ -4,12 +4,13 @@ const { generateUserId } = require('../services/auth.service');
 const { sendMail, emailTemplates } = require('../services/email.service');
 const bcrypt = require('bcryptjs');
 
-// ----------------- REGISTER COMPANY (By dealer/owner) -----------------
+// controllers/company.controller.js - Update registerCompany function
 exports.registerCompany = async (req, res, next) => {
    try {
       const {
          name, email, phone, address, city, licenseNumber, website,
-         ownerName, ownerEmail, ownerPassword, ownerPhone
+         ownerName, ownerEmail, ownerPassword, ownerPhone,
+         selectedPlanId // New field: plan selected during registration
       } = req.body;
 
       // Check if company email already exists
@@ -22,6 +23,31 @@ exports.registerCompany = async (req, res, next) => {
       const existingOwner = await User.findOne({ email: ownerEmail });
       if (existingOwner) {
          return res.status(400).json({ message: "Owner email already registered" });
+      }
+
+      // Validate selected plan
+      let selectedPlan;
+      if (selectedPlanId) {
+         selectedPlan = await Plan.findOne({
+            _id: selectedPlanId,
+            deleted: false,
+            isActive: true
+         });
+
+         if (!selectedPlan) {
+            return res.status(400).json({ message: "Selected plan not found or inactive" });
+         }
+      } else {
+         // If no plan selected, use default plan
+         selectedPlan = await Plan.findOne({
+            isDefault: true,
+            deleted: false,
+            isActive: true
+         });
+
+         if (!selectedPlan) {
+            return res.status(400).json({ message: "No default plan available. Please contact administrator." });
+         }
       }
 
       // Generate OTP for owner verification
@@ -44,8 +70,8 @@ exports.registerCompany = async (req, res, next) => {
          verified: false
       });
 
-      // Create company
-      const company = await Company.create({
+      // Create company with selected plan
+      const companyData = {
          companyId: generateUserId(email),
          name,
          email,
@@ -54,9 +80,27 @@ exports.registerCompany = async (req, res, next) => {
          city,
          licenseNumber,
          website,
-         adminId: owner._id, // Link to owner
-         status: 'pending'
-      });
+         adminId: owner._id,
+         status: 'pending',
+         currentPlan: selectedPlan._id,
+         subscriptionStatus: selectedPlan.price === 0 ? 'active' : 'pending_payment',
+         planLimitations: {
+            maxDealers: selectedPlan.limitations.maxDealers,
+            maxProperties: selectedPlan.limitations.maxProperties,
+            features: selectedPlan.limitations.features
+         },
+         planHistory: [{
+            planId: selectedPlan._id,
+            planName: selectedPlan.name,
+            price: selectedPlan.price,
+            startDate: new Date(),
+            endDate: new Date(Date.now() + selectedPlan.validateDays * 24 * 60 * 60 * 1000),
+            status: selectedPlan.price === 0 ? 'active' : 'pending_payment',
+            purchasedAt: new Date()
+         }]
+      };
+
+      const company = await Company.create(companyData);
 
       // Update owner with company reference
       owner.companyId = company._id;
@@ -67,19 +111,37 @@ exports.registerCompany = async (req, res, next) => {
          console.log(`🔑 OTP for ${ownerEmail}: ${otp}`);
       }
 
-      // Send OTP email to owner
+      // Send OTP email to owner with plan details
       await sendMail({
          to: ownerEmail,
-         ...emailTemplates.otp(ownerName, otp),
+         ...emailTemplates.companyRegistrationOtp(
+            ownerName,
+            otp,
+            company.name,
+            selectedPlan.name,
+            selectedPlan.price
+         ),
       });
 
+      // Notify super admin about new company registration with plan
+      await this.notifySuperAdminNewCompany(company, owner, selectedPlan);
+
       res.status(201).json({
-         message: "Company registration submitted. Please verify owner email.",
+         message: selectedPlan.price === 0
+            ? "Company registration submitted. Please verify owner email."
+            : "Company registration submitted. Please verify owner email and complete payment.",
          company: {
             id: company._id,
             name: company.name,
             email: company.email,
-            status: company.status
+            status: company.status,
+            subscriptionStatus: company.subscriptionStatus,
+            currentPlan: {
+               id: selectedPlan._id,
+               name: selectedPlan.name,
+               price: selectedPlan.price
+            },
+            requiresPayment: selectedPlan.price > 0
          },
          owner: {
             id: owner._id,
@@ -92,7 +154,6 @@ exports.registerCompany = async (req, res, next) => {
    }
 };
 
-// ----------------- VERIFY COMPANY OWNER -----------------
 exports.verifyCompanyOwner = async (req, res, next) => {
    try {
       const { email, otp } = req.body;
@@ -140,7 +201,6 @@ exports.verifyCompanyOwner = async (req, res, next) => {
    }
 };
 
-// ----------------- GET PENDING COMPANIES (Super Admin Only) -----------------
 exports.getPendingCompanies = async (req, res, next) => {
    try {
       const { role } = req.user;
@@ -159,7 +219,6 @@ exports.getPendingCompanies = async (req, res, next) => {
    }
 };
 
-// ----------------- UPDATE COMPANY STATUS (Super Admin Only) -----------------
 exports.updateCompanyStatus = async (req, res, next) => {
    try {
       const { companyId } = req.params;
@@ -198,18 +257,19 @@ exports.updateCompanyStatus = async (req, res, next) => {
    }
 };
 
-// ----------------- NOTIFY SUPER ADMIN ABOUT NEW COMPANY -----------------
-exports.notifySuperAdminNewCompany = async (company, owner) => {
+exports.notifySuperAdminNewCompany = async (company, owner, plan) => {
    try {
       const superAdmins = await User.find({ role: 'super_admin' });
 
       for (const admin of superAdmins) {
          await sendMail({
             to: admin.email,
-            ...emailTemplates.newCompanyNotification(
+            ...emailTemplates.newCompanyRegistrationNotification(
                admin.name,
                owner.name,
                company.name,
+               plan.name,
+               plan.price,
                company._id
             ),
          });
@@ -219,7 +279,6 @@ exports.notifySuperAdminNewCompany = async (company, owner) => {
    }
 };
 
-// ----------------- GET ALL COMPANIES -----------------
 exports.getCompanies = async (req, res, next) => {
    try {
       const { role, companyId } = req.user;
@@ -245,7 +304,6 @@ exports.getCompanies = async (req, res, next) => {
    }
 };
 
-// ----------------- GET COMPANY DEALERS -----------------
 exports.getCompanyDealers = async (req, res, next) => {
    try {
       const { companyId } = req.params;

@@ -1,3 +1,4 @@
+// models/Plan.model.js
 const mongoose = require('mongoose');
 
 const ALLOWED_FEATURES = [
@@ -7,6 +8,12 @@ const ALLOWED_FEATURES = [
   "vendor_management",
   "order_tracking",
   "support",
+  "basic_listings",
+  "premium_listings",
+  "dealer_management",
+  "custom_branding",
+  "multiple_locations",
+  "advanced_analytics"
 ];
 
 const PlanSchema = new mongoose.Schema(
@@ -18,10 +25,6 @@ const PlanSchema = new mongoose.Schema(
       trim: true,
       maxlength: [50, "Plan name cannot exceed 50 characters"],
       minlength: [3, "Plan name must be at least 3 characters"],
-      match: [
-        /^[a-zA-Z0-9\s-]+$/,
-        "Plan name can only contain letters, numbers, spaces, and hyphens",
-      ],
     },
     description: {
       type: String,
@@ -31,23 +34,46 @@ const PlanSchema = new mongoose.Schema(
     price: {
       type: Number,
       required: [true, "Price is required"],
+      min: [0, "Price cannot be negative"]
     },
-    validateDays: Number,
+    currency: {
+      type: String,
+      default: 'USD'
+    },
+    billingCycle: {
+      type: String,
+      enum: ['monthly', 'yearly', 'lifetime'],
+      default: 'monthly'
+    },
+    validateDays: {
+      type: Number,
+      default: 30
+    },
+    isDefault: {
+      type: Boolean,
+      default: false
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
     limitations: {
+      maxDealers: {
+        type: Number,
+        default: 5,
+        min: 1
+      },
+      maxProperties: {
+        type: Number,
+        default: 50,
+        min: 0
+      },
       maxStaff: {
         type: Number,
         default: 10,
+        min: 1
       },
-      maxInventoryItems: {
-        type: Number,
-        default: 100,
-      },
-      maxVendors: {
-        type: Number,
-        default: 50,
-      },
-      features: [
-      {
+      features: [{
         type: String,
         trim: true,
         lowercase: true,
@@ -55,27 +81,24 @@ const PlanSchema = new mongoose.Schema(
           validator: (value) => ALLOWED_FEATURES.includes(value),
           message: `Feature must be one of: ${ALLOWED_FEATURES.join(", ")}`,
         },
-      },
-    ],
+      }],
     },
-    history: [
-      {
-        action: String,
-        performedBy: String, //userId
+    history: [{
+      action: String,
+      performedBy: String,
       createdAt: {
-          type: Date,
-          default: Date.now,
-        },
-      }
-    ],
-    deleted: { type: Boolean, default: false },
-    createdBy: {
-      type: String,
-      required: [true, "Creator is required"],
-    },
-    isActive: {
+        type: Date,
+        default: Date.now,
+      },
+    }],
+    deleted: {
       type: Boolean,
-      default: true,
+      default: false
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, "Creator is required"],
     },
   },
   {
@@ -85,8 +108,10 @@ const PlanSchema = new mongoose.Schema(
   }
 );
 
-// Indexes for better query performance
-// PlanSchema.index({ name: 1 });
-// PlanSchema.index({ createdBy: 1, isActive: 1 });
+// Indexes
+PlanSchema.index({ name: 1 });
+PlanSchema.index({ isActive: 1, deleted: 1 });
+PlanSchema.index({ price: 1 });
+PlanSchema.index({ isDefault: 1 });
 
-module.exports= mongoose.model("Plan", PlanSchema);
+module.exports = mongoose.model("Plan", PlanSchema);

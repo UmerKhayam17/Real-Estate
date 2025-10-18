@@ -111,6 +111,41 @@ const getAllPlans = async (req, res) => {
   }
 };
 
+const getPlansForRegistration = async (req, res, next) => {
+   try {
+      const plans = await Plan.find({
+         deleted: false,
+         isActive: true
+      })
+         .select('name description price currency billingCycle validateDays limitations isDefault')
+         .sort({ price: 1 });
+
+      // Format response for registration page
+      const formattedPlans = plans.map(plan => ({
+         id: plan._id,
+         name: plan.name,
+         description: plan.description,
+         price: plan.price,
+         currency: plan.currency,
+         billingCycle: plan.billingCycle,
+         validateDays: plan.validateDays,
+         isDefault: plan.isDefault,
+         limitations: {
+            maxDealers: plan.limitations.maxDealers,
+            maxProperties: plan.limitations.maxProperties,
+            features: plan.limitations.features
+         },
+         popular: plan.name.toLowerCase().includes('professional') // Mark professional as popular
+      }));
+
+      res.status(200).json({
+         plans: formattedPlans,
+         defaultPlan: formattedPlans.find(plan => plan.isDefault) || formattedPlans[0]
+      });
+   } catch (err) {
+      next(err);
+   }
+};
 
 const changePlan = async (req, res) => {
   try {
@@ -189,5 +224,6 @@ module.exports = {
   updatePlan,
   deletePlan,
   getAllPlans,
-  changePlan
+  changePlan,
+  getPlansForRegistration
 };
