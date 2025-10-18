@@ -1,5 +1,5 @@
 // controllers/company.controller.js
-const { Company, User, Dealer } = require('../models');
+const { Company, User, Dealer , Plan } = require('../models');
 const { generateUserId } = require('../services/auth.service');
 const { sendMail, emailTemplates } = require('../services/email.service');
 const bcrypt = require('bcryptjs');
