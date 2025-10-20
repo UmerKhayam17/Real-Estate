@@ -1,4 +1,4 @@
-const IndexModel = require("../models");
+const {Plan} = require("../models");
 const { generatePlanId } = require("../utils/generatePlanIdPurchased.js");
 
 const createPlan = async (req, res, next) => {
@@ -6,13 +6,13 @@ const createPlan = async (req, res, next) => {
   
     const { name, description, price, limitations, validateDays } = req.body;
 
-    const planExists = await IndexModel.Plan.findOne({ name, deleted: false });
+    const planExists = await Plan.findOne({ name, deleted: false });
     if (planExists) {
       res.status(400);
       throw new Error("Plan with this name already exists");
     }
 
-    const plan = await IndexModel.Plan.create({
+    const plan = await Plan.create({
       name,
       description,
       price,
@@ -34,20 +34,15 @@ const createPlan = async (req, res, next) => {
 const updatePlan = async (req, res, next) => {
   try {
     const { id } = req.params;
-    // Check if user is Admin
-    if (!req.user || req.user.role !== "superAdmin") {
-      res.status(403);
-      throw new Error("Not authorized, admin access required");
-    }
 
-    const plan = await IndexModel.Plan.findOne({ _id: id, deleted: false });
+    const plan = await Plan.findOne({ _id: id, deleted: false });
 
     if (!plan) {
       res.status(404);
       throw new Error("Plan not found");
     }
 
-    const updatedPlan = await IndexModel.Plan.findByIdAndUpdate(
+    const updatedPlan = await Plan.findByIdAndUpdate(
       id,
       { ...req.body, updatedAt: Date.now() },
       {
@@ -67,20 +62,14 @@ const updatePlan = async (req, res, next) => {
 
 const deletePlan = async (req, res, next) => {
   try {
-    // Check if user is Admin
-    if (!req.user || req.user.role !== "superAdmin") {
-      res.status(403);
-      throw new Error("Not authorized, superAdmin access required");
-    }
-
-    const plan = await IndexModel.Plan.findById(req.params.id);
+    const plan = await Plan.findById(req.params.id);
 
     if (!plan) {
       res.status(404);
       throw new Error("Plan not found");
     }
 
-    await IndexModel.Plan.findByIdAndUpdate(
+    await Plan.findByIdAndUpdate(
       req.params.id,
       { deleted: true, isActive: false, updatedAt: Date.now() },
       { new: true }
@@ -98,7 +87,7 @@ const deletePlan = async (req, res, next) => {
 // GET ALL PLANS
 const getAllPlans = async (req, res) => {
   try {
-    const plans = await IndexModel.Plan.find({
+    const plans = await Plan.find({
       deleted: false,
       isActive: true,
     });
@@ -152,7 +141,7 @@ const changePlan = async (req, res) => {
     const { changingPlanId, newPlanId } = req.body;
 
     // Find current company
-    const company = await IndexModel.Company.findOne({
+    const company = await Company.findOne({
       companyId: req.user.companyId,
       deleted: false,
       isActive: true,
@@ -176,7 +165,7 @@ const changePlan = async (req, res) => {
     }
 
     // Find the new plan from Plan collection
-    const newPlan = await IndexModel.Plan.findOne({
+    const newPlan = await Plan.findOne({
       _id: newPlanId,
       deleted: false,
       isActive: true,

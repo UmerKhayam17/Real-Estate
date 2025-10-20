@@ -1,16 +1,15 @@
 // controllers/company.controller.js
-const { Company, User, Dealer , Plan } = require('../models');
+const { Company, User, Dealer, Plan } = require('../models');
 const { generateUserId } = require('../services/auth.service');
 const { sendMail, emailTemplates } = require('../services/email.service');
 const bcrypt = require('bcryptjs');
 
-// controllers/company.controller.js - Update registerCompany function
 exports.registerCompany = async (req, res, next) => {
    try {
       const {
          name, email, phone, address, city, licenseNumber, website,
          ownerName, ownerEmail, ownerPassword, ownerPhone,
-         selectedPlanId // New field: plan selected during registration
+         selectedPlanId
       } = req.body;
 
       // Check if company email already exists
@@ -83,7 +82,7 @@ exports.registerCompany = async (req, res, next) => {
          adminId: owner._id,
          status: 'pending',
          currentPlan: selectedPlan._id,
-         subscriptionStatus: selectedPlan.price === 0 ? 'active' : 'pending_payment',
+         subscriptionStatus: selectedPlan.price === 0 ? 'active' : 'inactive',
          planLimitations: {
             maxDealers: selectedPlan.limitations.maxDealers,
             maxProperties: selectedPlan.limitations.maxProperties,
@@ -95,7 +94,7 @@ exports.registerCompany = async (req, res, next) => {
             price: selectedPlan.price,
             startDate: new Date(),
             endDate: new Date(Date.now() + selectedPlan.validateDays * 24 * 60 * 60 * 1000),
-            status: selectedPlan.price === 0 ? 'active' : 'pending_payment',
+            status: selectedPlan.price === 0 ? 'active' : 'expired',
             purchasedAt: new Date()
          }]
       };
@@ -103,8 +102,10 @@ exports.registerCompany = async (req, res, next) => {
       const company = await Company.create(companyData);
 
       // Update owner with company reference
-      owner.companyId = company._id;
-      await owner.save();
+      await User.findByIdAndUpdate(
+         owner._id,
+         { companyId: company._id }
+      );
 
       // Debug OTP in dev
       if (process.env.NODE_ENV !== "production") {
@@ -149,7 +150,19 @@ exports.registerCompany = async (req, res, next) => {
             email: owner.email
          }
       });
+
    } catch (err) {
+      console.error('Company registration error:', err);
+
+      // Cleanup: If user was created but company failed, delete the user
+      if (req.body.ownerEmail) {
+         try {
+            await User.deleteOne({ email: req.body.ownerEmail });
+         } catch (cleanupError) {
+            console.error('Cleanup error:', cleanupError);
+         }
+      }
+
       next(err);
    }
 };
@@ -160,14 +173,23 @@ exports.verifyCompanyOwner = async (req, res, next) => {
 
       const owner = await User.findOne({ email, role: 'company_admin' });
       if (!owner) {
+
+
          return res.status(400).json({ message: "Company owner not found" });
       }
 
       // OTP invalid or expired
       if (owner.otp !== otp || owner.otpExpires < Date.now()) {
-         // Cleanup: delete both owner and company if OTP invalid
-         await Company.deleteOne({ adminId: owner._id });
+         // Get company before cleanup
+         const company = await Company.findOne({ adminId: owner._id });
+
+         // Cleanup within transaction: delete both owner and company if OTP invalid
+         if (company) {
+            await Company.deleteOne({ _id: company._id });
+         }
          await User.deleteOne({ _id: owner._id });
+
+
          return res.status(400).json({ message: "Invalid or expired OTP. Please register again." });
       }
 
@@ -179,6 +201,7 @@ exports.verifyCompanyOwner = async (req, res, next) => {
 
       // Get company details
       const company = await Company.findOne({ adminId: owner._id });
+
 
       // Notify super admin about new company registration
       await this.notifySuperAdminNewCompany(company, owner);
@@ -201,6 +224,28 @@ exports.verifyCompanyOwner = async (req, res, next) => {
    }
 };
 
+exports.notifySuperAdminNewCompany = async (company, owner, plan) => {
+   try {
+      const superAdmins = await User.find({ role: 'super_admin' });
+
+      for (const admin of superAdmins) {
+         await sendMail({
+            to: admin.email,
+            ...emailTemplates.newCompanyRegistrationNotification(
+               admin.name,
+               owner.name,
+               company.name,
+               plan ? plan.name : 'Default Plan',
+               plan ? plan.price : 0,
+               company._id
+            ),
+         });
+      }
+   } catch (error) {
+      console.error("Error notifying super admin:", error);
+   }
+};
+
 exports.getPendingCompanies = async (req, res, next) => {
    try {
       const { role } = req.user;
@@ -211,6 +256,7 @@ exports.getPendingCompanies = async (req, res, next) => {
 
       const pendingCompanies = await Company.find({ status: 'pending' })
          .populate('adminId', 'name email phone verified')
+         .populate('currentPlan', 'name price limitations')
          .sort({ createdAt: -1 });
 
       res.status(200).json({ pendingCompanies });
@@ -229,7 +275,7 @@ exports.updateCompanyStatus = async (req, res, next) => {
          return res.status(403).json({ message: "Access denied. Super admin only." });
       }
 
-      const company = await Company.findById(companyId).populate('adminId');
+      const company = await Company.findById(companyId).populate('adminId').populate('currentPlan');
       if (!company) {
          return res.status(404).json({ message: "Company not found" });
       }
@@ -250,32 +296,15 @@ exports.updateCompanyStatus = async (req, res, next) => {
 
       res.status(200).json({
          message: `Company status updated to ${status}`,
-         company
+         company: {
+            id: company._id,
+            name: company.name,
+            status: company.status,
+            currentPlan: company.currentPlan
+         }
       });
    } catch (err) {
       next(err);
-   }
-};
-
-exports.notifySuperAdminNewCompany = async (company, owner, plan) => {
-   try {
-      const superAdmins = await User.find({ role: 'super_admin' });
-
-      for (const admin of superAdmins) {
-         await sendMail({
-            to: admin.email,
-            ...emailTemplates.newCompanyRegistrationNotification(
-               admin.name,
-               owner.name,
-               company.name,
-               plan.name,
-               plan.price,
-               company._id
-            ),
-         });
-      }
-   } catch (error) {
-      console.error("Error notifying super admin:", error);
    }
 };
 
@@ -296,6 +325,7 @@ exports.getCompanies = async (req, res, next) => {
 
       const companies = await Company.find(filter)
          .populate('adminId', 'name email phone verified')
+         .populate('currentPlan', 'name price limitations')
          .sort({ createdAt: -1 });
 
       res.status(200).json({ companies });
@@ -303,6 +333,7 @@ exports.getCompanies = async (req, res, next) => {
       next(err);
    }
 };
+
 
 exports.getCompanyDealers = async (req, res, next) => {
    try {
@@ -320,6 +351,38 @@ exports.getCompanyDealers = async (req, res, next) => {
          .sort({ createdAt: -1 });
 
       res.status(200).json({ dealers });
+   } catch (err) {
+      next(err);
+   }
+};
+
+
+exports.cleanupFailedRegistrations = async (req, res, next) => {
+   try {
+      const { role } = req.user;
+
+      if (role !== 'super_admin') {
+         return res.status(403).json({ message: "Access denied. Super admin only." });
+      }
+
+      // Find users that are company_admin but not verified and have no company
+      const orphanedUsers = await User.find({
+         role: 'company_admin',
+         verified: false,
+         companyId: null,
+         createdAt: { $lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Older than 24 hours
+      });
+
+      let deletedCount = 0;
+      for (const user of orphanedUsers) {
+         await User.deleteOne({ _id: user._id });
+         deletedCount++;
+      }
+
+      res.status(200).json({
+         message: `Cleaned up ${deletedCount} orphaned registration records`,
+         deletedCount
+      });
    } catch (err) {
       next(err);
    }

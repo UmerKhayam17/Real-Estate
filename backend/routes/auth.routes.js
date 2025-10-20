@@ -4,19 +4,19 @@ const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
-// Public routes
+// ==================== PUBLIC ROUTES ====================
 router.post('/register', authController.register);
 router.post('/verify-otp', authController.verifyOtp);
 router.post('/login', authController.login);
 
-// Protected routes (all verified users)
-router.get('/me', authenticate, authController.me);
+// ==================== PROTECTED ROUTES ====================
+router.get('/me', authenticate, authController.getProfile);
 router.get('/dealer/status', authenticate, authController.checkDealerStatus);
 router.post('/dealer/profile', authenticate, authController.completeDealerProfile);
 
-// Admin routes - role-based access
-router.get('/admin/dealers/pending', authController.getPendingDealers);
-router.put('/admin/dealers/:dealerId', authController.approveDealer);
-router.get('/admin/allusers', authenticate, authorize(['super_admin', 'company_admin']), authController.getAllUsers);
+// ==================== ADMIN ROUTES ====================
+router.get('/admin/dealers/pending', authenticate, authorize(['super_admin', 'company_admin']), authController.getPendingDealers);
+router.put('/admin/dealers/:dealerId/approval', authenticate, authorize(['super_admin', 'company_admin']), authController.approveDealer);
+router.get('/admin/users', authenticate, authorize(['super_admin', 'company_admin']), authController.getAllUsers);
 
 module.exports = router;

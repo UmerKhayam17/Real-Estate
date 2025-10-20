@@ -1,3 +1,4 @@
+// controllers/auth.controller.js
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User, Dealer, Company } = require('../models');
@@ -5,7 +6,6 @@ const { jwtSign } = require('../services/auth.service');
 const { generateUserId } = require("../services/auth.service");
 const { sendMail, emailTemplates } = require('../services/email.service');
 const { SALT_ROUNDS = 10 } = process.env;
-
 
 exports.register = async (req, res, next) => {
   try {
@@ -121,96 +121,6 @@ exports.verifyOtp = async (req, res, next) => {
   }
 };
 
-exports.completeDealerProfile = async (req, res, next) => {
-  try {
-    const userId = req.user.id;
-    const dealerData = req.body;
-    console.log("the user is ", userId)
-    // Check if user is actually a dealer
-    const user = await User.findById(userId);
-    if (!user || user.role !== "dealer") {
-      return res.status(400).json({ message: "User is not registered as dealer" });
-    }
-
-    // Check if dealer profile already exists
-    let dealerProfile = await Dealer.findOne({ userId });
-
-    // Set approval status based on company
-    const approvalStatus = 'pending'; // All new profiles start as pending
-
-    if (dealerProfile) {
-      // Update existing profile
-      dealerProfile = await Dealer.findOneAndUpdate(
-        { userId },
-        {
-          ...dealerData,
-          approvalStatus: 'pending',
-          approvedBy: null,
-          approvedAt: null,
-          rejectionReason: ''
-        },
-        { new: true, runValidators: true }
-      );
-    } else {
-      // Create new dealer profile
-      dealerProfile = await Dealer.create({
-        userId,
-        companyId:user.companyId,
-        ...dealerData,
-        approvalStatus,
-      });
-
-      // Mark dealer profile as completed in user record
-      user.dealerProfileCompleted = true;
-      await user.save();
-    }
-
-    // Notify admin about profile creation/update
-    await this.notifyAdminNewDealer(user, dealerProfile);
-
-    res.status(200).json({
-      message: "Dealer profile submitted successfully. Waiting for admin approval.",
-      dealerProfile,
-      status: "pending_approval"
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.checkDealerStatus = async (req, res, next) => {
-  try {
-    const userId = req.user.id;
-
-    const user = await User.findById(userId);
-    if (!user || user.role !== "dealer") {
-      return res.status(400).json({ message: "User is not a dealer" });
-    }
-
-    const dealerProfile = await Dealer.findOne({ userId })
-      .populate('userId', 'name email phone')
-      .populate('companyId', 'name status')
-      .populate('approvedBy', 'name email');
-
-    if (!dealerProfile) {
-      return res.status(200).json({
-        message: "Dealer profile not completed",
-        hasDealerProfile: false,
-        status: "profile_incomplete"
-      });
-    }
-
-    res.status(200).json({
-      hasDealerProfile: true,
-      dealerProfile,
-      approvalStatus: dealerProfile.approvalStatus,
-      status: dealerProfile.approvalStatus
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -265,6 +175,126 @@ exports.login = async (req, res, next) => {
     }
 
     res.json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .select('-passwordHash')
+      .populate('companyId', 'name status');
+
+    let dealerProfile = null;
+    let dealerStatus = null;
+
+    if (user.role === "dealer") {
+      dealerProfile = await Dealer.findOne({ userId: user._id })
+        .populate('companyId', 'name status')
+        .populate('approvedBy', 'name email');
+
+      dealerStatus = dealerProfile ? {
+        ...dealerProfile.toObject(),
+        approvalStatus: dealerProfile.approvalStatus,
+        status: dealerProfile.approvalStatus
+      } : {
+        status: "profile_incomplete",
+        message: "Please complete your dealer profile"
+      };
+    }
+
+    res.json({
+      user,
+      dealerProfile: dealerStatus
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.completeDealerProfile = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const dealerData = req.body;
+
+    // Check if user is actually a dealer
+    const user = await User.findById(userId);
+    if (!user || user.role !== "dealer") {
+      return res.status(400).json({ message: "User is not registered as dealer" });
+    }
+
+    // Check if dealer profile already exists
+    let dealerProfile = await Dealer.findOne({ userId });
+
+    if (dealerProfile) {
+      // Update existing profile
+      dealerProfile = await Dealer.findOneAndUpdate(
+        { userId },
+        {
+          ...dealerData,
+          approvalStatus: 'pending',
+          approvedBy: null,
+          approvedAt: null,
+          rejectionReason: ''
+        },
+        { new: true, runValidators: true }
+      );
+    } else {
+      // Create new dealer profile
+      dealerProfile = await Dealer.create({
+        userId,
+        companyId: user.companyId,
+        ...dealerData,
+        approvalStatus: 'pending',
+      });
+
+      // Mark dealer profile as completed in user record
+      user.dealerProfileCompleted = true;
+      await user.save();
+    }
+
+    // Notify admin about profile creation/update
+    await this.notifyAdminNewDealer(user, dealerProfile);
+
+    res.status(200).json({
+      message: "Dealer profile submitted successfully. Waiting for admin approval.",
+      dealerProfile,
+      status: "pending_approval"
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.checkDealerStatus = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user || user.role !== "dealer") {
+      return res.status(400).json({ message: "User is not a dealer" });
+    }
+
+    const dealerProfile = await Dealer.findOne({ userId })
+      .populate('userId', 'name email phone')
+      .populate('companyId', 'name status')
+      .populate('approvedBy', 'name email');
+
+    if (!dealerProfile) {
+      return res.status(200).json({
+        message: "Dealer profile not completed",
+        hasDealerProfile: false,
+        status: "profile_incomplete"
+      });
+    }
+
+    res.status(200).json({
+      hasDealerProfile: true,
+      dealerProfile,
+      approvalStatus: dealerProfile.approvalStatus,
+      status: dealerProfile.approvalStatus
+    });
   } catch (err) {
     next(err);
   }
@@ -375,70 +405,6 @@ exports.approveDealer = async (req, res, next) => {
   }
 };
 
-exports.notifyAdminNewDealer = async (user, dealerProfile) => {
-  try {
-    let admins = [];
-
-    if (dealerProfile.companyId) {
-      // Notify company admin for company dealers
-      admins = await User.find({
-        role: 'company_admin',
-        companyId: dealerProfile.companyId
-      });
-    } else {
-      // Notify super admin for independent dealers
-      admins = await User.find({ role: 'super_admin' });
-    }
-
-    for (const admin of admins) {
-      await sendMail({
-        to: admin.email,
-        ...emailTemplates.newDealerNotification(
-          admin.name,
-          user.name,
-          dealerProfile.businessName,
-          dealerProfile._id
-        ),
-      });
-    }
-  } catch (error) {
-    console.error("Error notifying admin:", error);
-  }
-};
-
-exports.me = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id)
-      .select('-passwordHash')
-      .populate('companyId', 'name status');
-
-    let dealerProfile = null;
-    let dealerStatus = null;
-
-    if (user.role === "dealer") {
-      dealerProfile = await Dealer.findOne({ userId: user._id })
-        .populate('companyId', 'name status')
-        .populate('approvedBy', 'name email');
-
-      dealerStatus = dealerProfile ? {
-        ...dealerProfile.toObject(),
-        approvalStatus: dealerProfile.approvalStatus,
-        status: dealerProfile.approvalStatus
-      } : {
-        status: "profile_incomplete",
-        message: "Please complete your dealer profile"
-      };
-    }
-
-    res.json({
-      user,
-      dealerProfile: dealerStatus
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
 exports.getAllUsers = async (req, res, next) => {
   try {
     const { role, companyId } = req.user;
@@ -530,5 +496,36 @@ exports.getAllUsers = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+exports.notifyAdminNewDealer = async (user, dealerProfile) => {
+  try {
+    let admins = [];
+
+    if (dealerProfile.companyId) {
+      // Notify company admin for company dealers
+      admins = await User.find({
+        role: 'company_admin',
+        companyId: dealerProfile.companyId
+      });
+    } else {
+      // Notify super admin for independent dealers
+      admins = await User.find({ role: 'super_admin' });
+    }
+
+    for (const admin of admins) {
+      await sendMail({
+        to: admin.email,
+        ...emailTemplates.newDealerNotification(
+          admin.name,
+          user.name,
+          dealerProfile.businessName,
+          dealerProfile._id
+        ),
+      });
+    }
+  } catch (error) {
+    console.error("Error notifying admin:", error);
   }
 };

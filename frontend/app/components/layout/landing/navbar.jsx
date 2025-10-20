@@ -1,5 +1,7 @@
+// app/components/layout/navbar.jsx
 import Link from 'next/link'
 import React from 'react'
+import { Button } from '@/components/ui/button'
 
 const Navbar = () => {
    return (
@@ -18,13 +20,17 @@ const Navbar = () => {
                   </Link>
                </div>
 
-               {/* Right side - Login button */}
-               <div className="flex items-center">
-                  <Link
-                     href="/auth/login"
-                     className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 shadow-soft hover:shadow-medium"
-                  >
-                     Login
+               {/* Right side - Actions */}
+               <div className="flex items-center space-x-4">
+                  <Link href="/company/register">
+                     <Button variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900">
+                        Register Company
+                     </Button>
+                  </Link>
+                  <Link href="/auth/login">
+                     <Button className="bg-primary-500 hover:bg-primary-600">
+                        Login
+                     </Button>
                   </Link>
                </div>
             </div>
