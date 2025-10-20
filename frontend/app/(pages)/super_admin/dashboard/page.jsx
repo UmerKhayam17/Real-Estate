@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { getUser } from '@/app/lib/auth';
+import { getUser } from '@/lib/auth';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({

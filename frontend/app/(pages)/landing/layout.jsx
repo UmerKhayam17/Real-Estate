@@ -1,6 +1,6 @@
-import Navbar from "@/app/components/layout/landing/navbar"
-import Header from "@/app/components/layout/landing/header"
-import Footer from "@/app/components/layout/landing/footer"
+import Navbar from "@/components/layout/landing/navbar"
+import Header from "@/components/layout/landing/header"
+import Footer from "@/components/layout/landing/footer"
 
 export default function LandingPageLayout({ children }) {
    return (

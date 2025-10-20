@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import PropertyCard from '../components/PropertyCard';
 import PropertyFilters from '../components/PropertyFilters';
-import { useProperties } from '@/app/Queries/propertyQuery';
+import { useProperties } from '@/Queries/propertyQuery';
 import { FiHome, FiPlus, FiLoader, FiCheck, FiClock, FiUser } from 'react-icons/fi';
 import Link from 'next/link';
 

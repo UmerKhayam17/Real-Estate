@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
-import Navbar from '@/app/components/layout/Navbar';
-import Sidebar from '@/app/components/layout/Sidebar';
+import Navbar from '@/components/layout/Navbar';
+import Sidebar from '@/components/layout/Sidebar';
 
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);

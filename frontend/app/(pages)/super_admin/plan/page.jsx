@@ -1,12 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Button } from '@/app/components/ui/button';
-import { PlanCard } from '@/app/components/plans/PlanCard';
-import { PlanFilters } from '@/app/components/plans/PlanFilters';
-import { CreatePlanDialog } from '@/app/components/plans/CreatePlanDialog';
-import { EditPlanDialog } from '@/app/components/plans/EditPlanDialog';
-import { EmptyState } from '@/app/components/plans/EmptyState';
+import { Button } from '@/components/ui/button';
+import { PlanCard } from '@/components/plans/PlanCard';
+import { PlanFilters } from '@/components/plans/PlanFilters';
+import { CreatePlanDialog } from '@/components/plans/CreatePlanDialog';
+import { EditPlanDialog } from '@/components/plans/EditPlanDialog';
+import { EmptyState } from '@/components/plans/EmptyState';
 import { Plus } from 'lucide-react';
 
 // ✅ TanStack versions (make sure these exist)
@@ -14,8 +14,8 @@ import {
   useCreatePlan,
   useUpdatePlan,
   useDeletePlan,
-} from '@/app/mutations/planMutations';
-import { useAllPlans } from '@/app/Queries/planQueries';
+} from '@/mutations/planMutations';
+import { useAllPlans } from '@/Queries/planQueries';
 
 export default function PlanManagement() {
   const [searchTerm, setSearchTerm] = useState('');

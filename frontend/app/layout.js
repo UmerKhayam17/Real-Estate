@@ -1,10 +1,10 @@
 // app/layout.js
 import { Inter, Poppins } from 'next/font/google'
-import './styles/globals.css'
-import './styles/style.css'
-import { TanstackProvider } from '@/app/components/providers/tanstack-provider'
+import '@/styles/globals.css'
+import '@/styles/style.css'
+import { TanstackProvider } from '@/components/providers/tanstack-provider'
 import { Toaster } from 'react-hot-toast'
-import { AuthProvider } from './hooks/useAuth';
+import { AuthProvider } from '../hooks/useAuth';
 
 
 const inter = Inter({

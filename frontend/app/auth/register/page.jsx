@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import api from "../../lib/axios";
+import api from "../../../lib/axios";
 import Link from "next/link";
 
 export default function RegisterPage() {
@@ -105,8 +105,8 @@ export default function RegisterPage() {
                     <label
                       key={role.value}
                       className={`flex flex-col p-4 border-2 rounded-lg cursor-pointer transition-colors ${form.role === role.value
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
                         }`}
                     >
                       <div className="flex items-center">

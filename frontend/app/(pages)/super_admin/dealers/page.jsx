@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
-import { getUser } from '@/app/lib/auth';
-import api from "@/app/lib/axios";
+import { getUser } from '@/lib/auth';
+import api from "@/lib/axios";
 
 const UsersPage = () => {
     const [users, setUsers] = useState([]);

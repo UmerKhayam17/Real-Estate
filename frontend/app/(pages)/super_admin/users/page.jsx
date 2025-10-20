@@ -1,8 +1,8 @@
 // app/(pages)/admin/users/page.jsx
 'use client';
 import { useState } from 'react';
-import ProtectedRoute from '../../../components/common/ProtectedRoute';
-import { useGetAllUsers } from '../../../Queries/userQuery';
+import ProtectedRoute from '../../../../components/common/ProtectedRoute';
+import { useGetAllUsers } from '../../../../Queries/userQuery';
 
 export default function AdminUsersPage() {
   const { data: users, isLoading, error } = useGetAllUsers();

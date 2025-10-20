@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import api from "../../lib/axios";
+import api from "../../../lib/axios";
 import Link from "next/link";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../../hooks/useAuth";
 
 export default function LoginPage() {
   const [form, setForm] = useState({

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import api from "../../../lib/axios";
+import api from "../../../../lib/axios";
 
 export default function DealerProfilePage() {
   const [form, setForm] = useState({

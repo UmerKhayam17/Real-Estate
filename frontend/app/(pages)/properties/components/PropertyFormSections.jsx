@@ -6,9 +6,9 @@ import {
    MultiSelectField,
    TextAreaField,
    Checkbox
-} from '@/app/components/common/FormFields';
-import FileUpload from '@/app/components/common/FileUpload';
-import { getImageUrl } from '@/app/utils/imageUtils';
+} from '@/components/common/FormFields';
+import FileUpload from '@/components/common/FileUpload';
+import { getImageUrl } from '@/utils/imageUtils';
 
 // Options for dropdowns
 export const PROPERTY_TYPES = [
