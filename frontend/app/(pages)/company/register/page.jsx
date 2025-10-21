@@ -32,7 +32,7 @@ const companySchema = z.object({
    // Owner Information
    ownerName: z.string().min(2, 'Owner name must be at least 2 characters'),
    ownerEmail: z.string().email('Invalid owner email address'),
-   ownerPassword: z.string().min(6, 'Password must be at least 6 characters'),
+   ownerPassword: z.string().min(3, 'Password must be at least 3 characters'), // Fixed: was min(1)
    ownerPhone: z.string().min(10, 'Owner phone must be at least 10 digits'),
 
    // Plan Selection
@@ -40,6 +40,7 @@ const companySchema = z.object({
 })
 
 export default function CompanyRegisterPage() {
+   console.log('Rendering CompanyRegisterPage component')
    const router = useRouter()
    const { submitCompanyRegistration, isLoading, error } = useCompanyRegistration()
    const { data: plansData, isLoading: plansLoading } = useAllPlans()
@@ -63,15 +64,21 @@ export default function CompanyRegisterPage() {
    })
 
    const onSubmit = async (data) => {
+      console.log('Form submitted with data:', data)
       try {
-         await submitCompanyRegistration(data)
+         const result = await submitCompanyRegistration(data)
+         console.log('Registration completed, result:', result)
       } catch (error) {
-         // Error is handled by the hook
-         console.error('Registration failed:', error)
+         console.error('Registration failed in component:', error)
       }
    }
 
-   const plans = plansData?.plans || []
+   const plans = plansData || []
+
+   // Add this debug section temporarily
+   console.log('Current plans data:', plansData)
+   console.log('Plans loading:', plansLoading)
+   console.log('Form errors:', form.formState.errors)
 
    return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
@@ -129,6 +136,15 @@ export default function CompanyRegisterPage() {
                      <Alert variant="destructive">
                         <AlertDescription>
                            {error.response?.data?.message || 'Registration failed. Please try again.'}
+                        </AlertDescription>
+                     </Alert>
+                  )}
+
+                  {/* Temporary debug info - remove after fixing */}
+                  {Object.keys(form.formState.errors).length > 0 && (
+                     <Alert variant="destructive">
+                        <AlertDescription>
+                           Form errors: {JSON.stringify(form.formState.errors)}
                         </AlertDescription>
                      </Alert>
                   )}
@@ -342,16 +358,22 @@ export default function CompanyRegisterPage() {
                                              <div className="flex items-center justify-center py-4">
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                              </div>
-                                          ) : plans.filter(plan => plan.isActive && !plan.deleted).map((plan) => (
-                                             <SelectItem key={plan._id} value={plan._id}>
-                                                <div className="flex items-center justify-between w-full">
-                                                   <span>{plan.name}</span>
-                                                   <span className="text-sm text-gray-600 ml-2">
-                                                      ${plan.price}/{plan.billingCycle}
-                                                   </span>
-                                                </div>
-                                             </SelectItem>
-                                          ))}
+                                          ) : plans.length > 0 ? (
+                                             plans.filter(plan => plan.isActive && !plan.deleted).map((plan) => (
+                                                <SelectItem key={plan._id} value={plan._id}>
+                                                   <div className="flex items-center justify-between w-full">
+                                                      <span>{plan.name}</span>
+                                                      <span className="text-sm text-gray-600 ml-2">
+                                                         ${plan.price}/{plan.billingCycle}
+                                                      </span>
+                                                   </div>
+                                                </SelectItem>
+                                             ))
+                                          ) : (
+                                             <div className="text-center py-4 text-gray-500">
+                                                No plans available
+                                             </div>
+                                          )}
                                        </SelectContent>
                                     </Select>
                                     <FormDescription>

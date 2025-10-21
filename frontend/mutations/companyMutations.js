@@ -7,7 +7,9 @@ import api, { getAuthHeaders } from '@/lib/axios';
 export function useRegisterCompany() {
    return useMutation({
       mutationFn: async (body) => {
-         const { data } = await api.post('/company/register', body);
+         console.log('Sending company registration request:', body)
+         const { data } = await api.post('/company/register', body)
+         console.log('Company registration response:', data)
          return data;
       },
    });
@@ -17,7 +19,9 @@ export function useRegisterCompany() {
 export function useVerifyCompanyOwner() {
    return useMutation({
       mutationFn: async (body) => {
-         const { data } = await api.post('/company/verify-owner', body);
+         console.log('Sending OTP verification request:', body)
+         const { data } = await api.post('/company/verify-owner', body)
+         console.log('OTP verification response:', data)
          return data;
       },
    });
@@ -39,6 +43,7 @@ export function useUpdateCompanyStatus() {
       onSuccess: () => {
          qc.invalidateQueries({ queryKey: ['pending-companies'] });
          qc.invalidateQueries({ queryKey: ['companies'] });
+         qc.invalidateQueries({ queryKey: ['company'] });
       },
    });
 }

@@ -1,55 +1,58 @@
 // app/hooks/useCompanyRegistration.js
-import { useState } from 'react'
 import { useRegisterCompany, useVerifyCompanyOwner } from '@/mutations'
-import { useRouter } from 'next/navigation'
+import { useCompanyRegistration as useCompanyRegistrationContext } from '@/contexts/CompanyRegistrationContext'
 
 export const useCompanyRegistration = () => {
-   const [step, setStep] = useState(1)
-   const [companyData, setCompanyData] = useState(null)
-   const [ownerEmail, setOwnerEmail] = useState('')
+   const {
+      companyData,
+      ownerEmail,
+      currentStep,
+      submitCompanyRegistration: contextSubmit,
+      verifyOwnerOtp: contextVerify,
+      resetFlow: contextReset
+   } = useCompanyRegistrationContext()
 
    const registerMutation = useRegisterCompany()
    const verifyMutation = useVerifyCompanyOwner()
-   const router = useRouter()
 
    const submitCompanyRegistration = async (data) => {
       try {
+         console.log('Submitting company registration:', data)
          const result = await registerMutation.mutateAsync(data)
-         setCompanyData(result)
-         setOwnerEmail(data.ownerEmail)
-         setStep(2)
+         console.log('Registration successful:', result)
+
+         contextSubmit(data, result)
          return result
       } catch (error) {
+         console.error('Registration error:', error)
          throw error
       }
    }
 
    const verifyOwnerOtp = async (otpData) => {
       try {
+         console.log('Verifying OTP for:', ownerEmail)
          const result = await verifyMutation.mutateAsync({
             email: ownerEmail,
             ...otpData
          })
-         setStep(3)
+         console.log('OTP verification successful:', result)
+
+         contextVerify(result)
          return result
       } catch (error) {
+         console.error('OTP verification error:', error)
          throw error
       }
    }
 
-   const resetFlow = () => {
-      setStep(1)
-      setCompanyData(null)
-      setOwnerEmail('')
-   }
-
    return {
-      step,
+      step: currentStep,
       companyData,
       ownerEmail,
       submitCompanyRegistration,
       verifyOwnerOtp,
-      resetFlow,
+      resetFlow: contextReset,
       isLoading: registerMutation.isPending || verifyMutation.isPending,
       error: registerMutation.error || verifyMutation.error
    }

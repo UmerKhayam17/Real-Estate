@@ -214,9 +214,14 @@ exports.getProfile = async (req, res, next) => {
 };
 
 exports.completeDealerProfile = async (req, res, next) => {
-  try {
+ try {
     const userId = req.user.id;
-    const dealerData = req.body;
+    const {
+      businessName, licenseNumber, officeAddress, officeCity,
+      yearsOfExperience, specialization, description, website,
+      socialLinks, whatsappNumber, cnic, documents,
+      companyId // Optional: if dealer wants to join a company
+    } = req.body;
 
     // Check if user is actually a dealer
     const user = await User.findById(userId);
@@ -227,27 +232,106 @@ exports.completeDealerProfile = async (req, res, next) => {
     // Check if dealer profile already exists
     let dealerProfile = await Dealer.findOne({ userId });
 
+    // Prepare dealer data
+    const dealerData = {
+      businessName,
+      licenseNumber,
+      officeAddress,
+      officeCity,
+      yearsOfExperience,
+      specialization,
+      description,
+      website,
+      socialLinks,
+      whatsappNumber,
+      cnic,
+      documents,
+      approvalStatus: 'pending',
+    };
+
+    let companyJoinRequestInfo = null;
+
+    // Handle company join request if provided
+    if (companyId) {
+      // Validate company exists and is approved
+      const company = await Company.findById(companyId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      if (company.status !== 'approved') {
+        return res.status(400).json({
+          message: "This company is not approved yet"
+        });
+      }
+
+      if (!company.canAddDealer) {
+        return res.status(400).json({
+          message: "This company has reached its dealer limit"
+        });
+      }
+
+      // Add company join request to dealer data
+      dealerData.companyJoinRequest = {
+        companyId,
+        status: 'pending',
+        requestedAt: new Date()
+      };
+
+      companyJoinRequestInfo = {
+        companyId,
+        dealerName: user.name,
+        businessName
+      };
+    }
+
     if (dealerProfile) {
       // Update existing profile
       dealerProfile = await Dealer.findOneAndUpdate(
         { userId },
-        {
-          ...dealerData,
-          approvalStatus: 'pending',
-          approvedBy: null,
-          approvedAt: null,
-          rejectionReason: ''
-        },
+        dealerData,
         { new: true, runValidators: true }
       );
+
+      // Add to company's pending requests if company join requested
+      if (companyId) {
+        await Company.findByIdAndUpdate(
+          companyId,
+          {
+            $push: {
+              pendingJoinRequests: {
+                dealerId: dealerProfile._id,
+                dealerName: user.name,
+                businessName: businessName,
+                requestedAt: new Date()
+              }
+            }
+          }
+        );
+      }
     } else {
-      // Create new dealer profile
+      // Create new dealer profile first
       dealerProfile = await Dealer.create({
         userId,
-        companyId: user.companyId,
         ...dealerData,
-        approvalStatus: 'pending',
       });
+
+      // Add to company's pending requests if company join requested
+      if (companyId) {
+        await Company.findByIdAndUpdate(
+          companyId,
+          {
+            $push: {
+              pendingJoinRequests: {
+                dealerId: dealerProfile._id,
+                dealerName: user.name,
+                businessName: businessName,
+                requestedAt: new Date()
+              }
+            }
+          }
+        );
+      }
 
       // Mark dealer profile as completed in user record
       user.dealerProfileCompleted = true;
@@ -255,15 +339,92 @@ exports.completeDealerProfile = async (req, res, next) => {
     }
 
     // Notify admin about profile creation/update
-    await this.notifyAdminNewDealer(user, dealerProfile);
+    await this.notifyAdminNewDealer(user, dealerProfile, companyId);
 
-    res.status(200).json({
-      message: "Dealer profile submitted successfully. Waiting for admin approval.",
-      dealerProfile,
-      status: "pending_approval"
-    });
+    // Prepare response
+    const response = {
+      message: companyId
+        ? "Dealer profile submitted successfully. Company join request sent for approval."
+        : "Dealer profile submitted successfully. Waiting for admin approval.",
+      dealerProfile: {
+        id: dealerProfile._id,
+        businessName: dealerProfile.businessName,
+        approvalStatus: dealerProfile.approvalStatus,
+        status: "pending_approval"
+      }
+    };
+
+    // Add company request info if applicable
+    if (companyId) {
+      response.companyJoinRequest = {
+        status: 'pending',
+        companyId: companyId,
+        requestedAt: dealerProfile.companyJoinRequest.requestedAt
+      };
+    }
+
+    res.status(200).json(response);
   } catch (err) {
+    console.error('Error in completeDealerProfile:', err);
     next(err);
+  }
+};
+
+// Update the notifyAdminNewDealer function
+exports.notifyAdminNewDealer = async (user, dealerProfile, companyId = null) => {
+  try {
+    let admins = [];
+    let emailTemplate;
+
+    if (companyId) {
+      // Notify company admin for company join request
+      admins = await User.find({
+        role: 'company_admin',
+        companyId: companyId
+      });
+
+      const company = await Company.findById(companyId);
+      emailTemplate = emailTemplates.newDealerWithCompanyRequest(
+        admins[0]?.name || 'Admin',
+        user.name,
+        dealerProfile.businessName,
+        company.name,
+        dealerProfile._id
+      );
+    } else {
+      // Notify super admin for independent dealers
+      admins = await User.find({ role: 'super_admin' });
+      emailTemplate = emailTemplates.newDealerNotification(
+        admins[0]?.name || 'Admin',
+        user.name,
+        dealerProfile.businessName,
+        dealerProfile._id
+      );
+    }
+
+    for (const admin of admins) {
+      const personalizedTemplate = companyId
+        ? emailTemplates.newDealerWithCompanyRequest(
+          admin.name,
+          user.name,
+          dealerProfile.businessName,
+          companyId.name || 'the company',
+          dealerProfile._id
+        )
+        : emailTemplates.newDealerNotification(
+          admin.name,
+          user.name,
+          dealerProfile.businessName,
+          dealerProfile._id
+        );
+
+      await sendMail({
+        to: admin.email,
+        ...personalizedTemplate,
+      });
+    }
+  } catch (error) {
+    console.error("Error notifying admin:", error);
   }
 };
 
@@ -496,36 +657,5 @@ exports.getAllUsers = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
-  }
-};
-
-exports.notifyAdminNewDealer = async (user, dealerProfile) => {
-  try {
-    let admins = [];
-
-    if (dealerProfile.companyId) {
-      // Notify company admin for company dealers
-      admins = await User.find({
-        role: 'company_admin',
-        companyId: dealerProfile.companyId
-      });
-    } else {
-      // Notify super admin for independent dealers
-      admins = await User.find({ role: 'super_admin' });
-    }
-
-    for (const admin of admins) {
-      await sendMail({
-        to: admin.email,
-        ...emailTemplates.newDealerNotification(
-          admin.name,
-          user.name,
-          dealerProfile.businessName,
-          dealerProfile._id
-        ),
-      });
-    }
-  } catch (error) {
-    console.error("Error notifying admin:", error);
   }
 };

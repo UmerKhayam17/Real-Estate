@@ -17,9 +17,13 @@ export default function ConfirmationPage() {
    const { companyData, resetFlow } = useCompanyRegistration()
 
    useEffect(() => {
+      console.log('ConfirmationPage - companyData:', companyData)
+
       // Redirect if no company data (direct access)
       if (!companyData) {
+         console.log('No companyData, redirecting to register')
          router.push('/company/register')
+         return
       }
    }, [companyData, router])
 

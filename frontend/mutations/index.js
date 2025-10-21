@@ -1,15 +1,8 @@
 // Auth mutations
-export { useRegister } from './authMutations';
-export { useVerifyOtp } from './authMutations';
-export { useLogin } from './authMutations';
-export { useCompleteDealerProfile } from './authMutations';
-export { useApproveDealer } from './authMutations';
+export { useRegister, useApproveDealer, useCompleteDealerProfile, useLogin, useVerifyOtp } from './authMutations';
 
 // User mutations
-export { useUpdateProfile } from './userMutations';
-export { useChangePassword } from './userMutations';
+export { useUpdateProfile, useChangePassword } from './userMutations';
 
 // Company mutations
-export { useRegisterCompany } from './companyMutations';
-export { useVerifyCompanyOwner } from './companyMutations';
-export { useUpdateCompanyStatus } from './companyMutations';
+export { useRegisterCompany, useUpdateCompanyStatus, useVerifyCompanyOwner } from './companyMutations';

@@ -6,7 +6,7 @@ const dealerSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true, // 1 dealer profile per user
+      unique: true,
     },
     businessName: { type: String, required: true },
     licenseNumber: { type: String },
@@ -17,7 +17,7 @@ const dealerSchema = new mongoose.Schema(
       lng: { type: Number },
     },
     yearsOfExperience: { type: Number, default: 0 },
-    specialization: [{ type: String }], // Residential, Commercial, Plots, etc.
+    specialization: [{ type: String }],
     description: { type: String, maxlength: 1000 },
     website: { type: String },
     socialLinks: {
@@ -27,23 +27,42 @@ const dealerSchema = new mongoose.Schema(
     },
     whatsappNumber: { type: String },
     cnic: { type: String, required: true },
-    documents: [{ type: String }], // CNIC, License, etc.
+    documents: [{ type: String }],
 
-    // Company reference (optional - dealer may or may not belong to a company)
+    // Company reference (if approved to join a company)
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Company',
       default: null
     },
 
-    // Approval system
+    // Company join request during profile completion
+    companyJoinRequest: {
+      companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company'
+      },
+      status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected', 'none'],
+        default: 'none'
+      },
+      requestedAt: Date,
+      respondedAt: Date,
+      responseReason: String,
+      respondedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    },
+
+    // Approval system for dealer profile
     approvalStatus: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],
       default: 'pending'
     },
 
-    // Who approved this dealer
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -52,7 +71,7 @@ const dealerSchema = new mongoose.Schema(
 
     approvedAt: { type: Date, default: null },
     rejectionReason: { type: String, default: '' },
-    
+
     // Stats
     rating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
@@ -63,8 +82,9 @@ const dealerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Index for better query performance
+// Indexes
 dealerSchema.index({ companyId: 1, approvalStatus: 1 });
-dealerSchema.index({ approvalStatus: 1 }); 
+dealerSchema.index({ approvalStatus: 1 });
+dealerSchema.index({ userId: 1 });
 
 module.exports = mongoose.model('Dealer', dealerSchema);

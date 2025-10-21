@@ -1,4 +1,3 @@
-// models/Company.model.js
 const mongoose = require('mongoose');
 
 const companySchema = new mongoose.Schema({
@@ -11,21 +10,18 @@ const companySchema = new mongoose.Schema({
    licenseNumber: { type: String, required: true },
    website: { type: String, default: '' },
 
-   // Admin who registered the company
    adminId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true
    },
 
-   // Current active plan
    currentPlan: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Plan',
       default: null
    },
 
-   // Plan history
    planHistory: [{
       planId: {
          type: mongoose.Schema.Types.ObjectId,
@@ -47,14 +43,12 @@ const companySchema = new mongoose.Schema({
       }
    }],
 
-   // Subscription status
    subscriptionStatus: {
       type: String,
       enum: ['active', 'inactive', 'trial', 'expired'],
       default: 'inactive'
    },
 
-   // Plan limitations (cached from current plan)
    planLimitations: {
       maxDealers: {
          type: Number,
@@ -70,15 +64,25 @@ const companySchema = new mongoose.Schema({
       }]
    },
 
-   // Company status
    status: {
       type: String,
       enum: ['pending', 'approved', 'rejected', 'suspended'],
       default: 'pending'
    },
 
-   // Documents
-   documents: [{ type: String }], // Company registration, license, etc.
+   documents: [{ type: String }],
+
+   // Track pending join requests for quick access
+   pendingJoinRequests: [{
+      dealerId: {
+         type: mongoose.Schema.Types.ObjectId,
+         ref: 'Dealer',
+         required: true
+      },
+      dealerName: String,
+      businessName: String,
+      requestedAt: Date
+   }],
 
    // Stats
    totalDealers: { type: Number, default: 0 },
@@ -102,6 +106,23 @@ companySchema.virtual('canAddProperty').get(function () {
 // Method to check if company has specific feature
 companySchema.methods.hasFeature = function (feature) {
    return this.planLimitations.features.includes(feature);
+};
+
+// Method to add pending join request
+companySchema.methods.addPendingRequest = function (dealerId, dealerName, businessName) {
+   this.pendingJoinRequests.push({
+      dealerId,
+      dealerName,
+      businessName,
+      requestedAt: new Date()
+   });
+};
+
+// Method to remove pending request
+companySchema.methods.removePendingRequest = function (dealerId) {
+   this.pendingJoinRequests = this.pendingJoinRequests.filter(
+      req => !req.dealerId.equals(dealerId)
+   );
 };
 
 // Update timestamp before save

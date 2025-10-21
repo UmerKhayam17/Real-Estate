@@ -22,9 +22,10 @@ const otpSchema = z.object({
 })
 
 export default function VerifyOwnerPage() {
+   console.log('Rendering VerifyOwnerPage component')
    const router = useRouter()
    const searchParams = useSearchParams()
-   const { verifyOwnerOtp, ownerEmail, isLoading, error, resetFlow } = useCompanyRegistration()
+   const { verifyOwnerOtp, ownerEmail, isLoading, error, resetFlow, companyData } = useCompanyRegistration()
 
    const [countdown, setCountdown] = useState(60)
    const [canResend, setCanResend] = useState(false)
@@ -37,11 +38,16 @@ export default function VerifyOwnerPage() {
    })
 
    useEffect(() => {
+      console.log('VerifyOwnerPage - ownerEmail:', ownerEmail)
+      console.log('VerifyOwnerPage - companyData:', companyData)
+
       // Redirect if no email in context (direct access)
       if (!ownerEmail) {
+         console.log('No ownerEmail, redirecting to register')
          router.push('/company/register')
+         return
       }
-   }, [ownerEmail, router])
+   }, [ownerEmail, companyData, router])
 
    useEffect(() => {
       const timer = setInterval(() => {
