@@ -57,7 +57,7 @@ const PropertyFormContent = () => {
    useEffect(() => {
       if (isMounted && !isAuthenticated()) {
          toast.error(`Please login to ${isEditMode ? 'edit' : 'create'} a property`);
-         router.push('/login');
+         router.push('/auth/login');
       }
    }, [isMounted, router, isEditMode]);
 
@@ -66,7 +66,7 @@ const PropertyFormContent = () => {
 
       if (!isAuthenticated()) {
          toast.error(`Please login to ${isEditMode ? 'edit' : 'create'} a property`);
-         router.push('/login');
+         router.push('/auth/login');
          return;
       }
 
@@ -107,7 +107,7 @@ const PropertyFormContent = () => {
                <p className="text-gray-600 mb-4">
                   Please login to {isEditMode ? 'edit' : 'create'} a property.
                </p>
-               <Button onClick={() => router.push('/login')}>
+               <Button onClick={() => router.push('/auth/login')}>
                   Go to Login
                </Button>
             </div>

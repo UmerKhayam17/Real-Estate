@@ -19,7 +19,7 @@ export function useUserProfile(options = {}) {
    });
 }
 
-// CHECK DEALER STATUS
+// CHECK DEALER STATUS WITH COMPANY INFO
 export function useDealerStatus(options = {}) {
    return useQuery({
       queryKey: ['dealer-status'],
@@ -31,7 +31,7 @@ export function useDealerStatus(options = {}) {
          });
          return data;
       },
-      staleTime: 2 * 60 * 1000, // 2 minutes
+      staleTime: 2 * 60 * 1000,
       enabled: !!localStorage.getItem('token'),
       ...options,
    });

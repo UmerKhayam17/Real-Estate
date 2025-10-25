@@ -53,7 +53,7 @@ export function useLogin() {
    });
 }
 
-// COMPLETE DEALER PROFILE
+// COMPLETE DEALER PROFILE WITH COMPANY JOIN REQUEST
 export function useCompleteDealerProfile() {
    const qc = useQueryClient();
 
@@ -68,7 +68,9 @@ export function useCompleteDealerProfile() {
       },
       onSuccess: () => {
          qc.invalidateQueries({ queryKey: ['dealer-status'] });
+         qc.invalidateQueries({ queryKey: ['dealer-company-status'] });
          qc.invalidateQueries({ queryKey: ['user'] });
+         qc.invalidateQueries({ queryKey: ['company-pending-requests'] });
       },
    });
 }

@@ -43,7 +43,7 @@ export function useCompany(companyId, options = {}) {
    });
 }
 
-// GET COMPANY DEALERS
+// GET COMPANY DEALERS WITH STATUS
 export function useCompanyDealers(companyId, options = {}) {
    return useQuery({
       queryKey: ['company-dealers', companyId],

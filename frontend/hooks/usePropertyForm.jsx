@@ -190,7 +190,7 @@ export const usePropertyForm = (existingProperty = null) => {
 
       if (!isAuthenticated()) {
          toast.error('Please login to continue');
-         router.push('/login');
+         router.push('/auth/login');
          return { success: false, error: 'Not authenticated' };
       }
 

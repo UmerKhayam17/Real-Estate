@@ -33,6 +33,7 @@ exports.authenticate = async (req, res, next) => {
       companyId: user.companyId?._id,
       company: user.companyId
     };
+    console.log("here")
     next();
   } catch (err) {
     console.error('Auth middleware error:', err.message);

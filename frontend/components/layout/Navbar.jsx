@@ -231,7 +231,7 @@ const Navbar = () => {
               // Login/Signup buttons for non-authenticated users
               <div className="flex items-center space-x-2">
                 <Link
-                  href="/login"
+                  href="/auth/login"
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200"
                 >
                   Log in

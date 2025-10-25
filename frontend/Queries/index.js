@@ -1,11 +1,7 @@
-// Auth queries
-export { useUserProfile, useDealerStatus, usePendingDealers, useAllUsers } from './authQueries';
-
-// User queries
-export { useUser } from './userQueries';
-
-// Company queries
-export { usePendingCompanies, useCompanies, useCompanyDealers } from './companyQueries';
-
-// Plan queries
-export { useAllPlans } from './planQueries';
+// queries/index.js
+export * from './authQueries';
+export * from './companyQueries';
+export * from './companyJoinQueries';
+export * from './userQueries';
+export * from './planQueries';
+export * from './propertyQuery';

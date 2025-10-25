@@ -1,5 +1,7 @@
+// hooks/useAuth.js
 'use client';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import api from '@/lib/axios';
 
 const AuthContext = createContext();
 
@@ -11,30 +13,32 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-    if (typeof window !== 'undefined') {
-      window.location.href = '/auth/login';
-    }
+    window.location.href = '/auth/login';
   }, []);
 
-  const checkAuth = useCallback(() => {
-    if (typeof window !== 'undefined') {
+  const checkAuth = useCallback(async () => {
+    try {
       const token = localStorage.getItem('token');
-      const userData = localStorage.getItem('user');
 
-      if (token && userData) {
-        try {
-          setUser(JSON.parse(userData));
-        } catch (error) {
-          console.error('Error parsing user data:', error);
-          // Call logout directly instead of through the function reference
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-        }
+      if (!token) {
+        setLoading(false);
+        return;
       }
+
+      // Verify token by making an API call to get user profile
+      const { data } = await api.get('/auth/me');
+      setUser(data.user);
+
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      // If token is invalid, clear it
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+    } finally {
       setLoading(false);
     }
-  }, []); // Removed logout dependency
+  }, []);
 
   useEffect(() => {
     checkAuth();

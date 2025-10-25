@@ -1,8 +1,7 @@
-// Auth mutations
-export { useRegister, useApproveDealer, useCompleteDealerProfile, useLogin, useVerifyOtp } from './authMutations';
-
-// User mutations
-export { useUpdateProfile, useChangePassword } from './userMutations';
-
-// Company mutations
-export { useRegisterCompany, useUpdateCompanyStatus, useVerifyCompanyOwner } from './companyMutations';
+// mutations/index.js
+export * from './authMutations';
+export * from './companyMutations';
+export * from './companyJoinMutations';
+export * from './userMutations';
+export * from './planMutations';
+export * from './propertyMutation';
