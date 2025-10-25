@@ -1,7 +1,7 @@
 // components/property/LocationPicker.js
 'use client'
 import React, { useState } from 'react';
-import { InputField } from '@/app/components/common/FormFields';
+import { InputField } from '@/components/common/FormFields';
 
 const LocationPicker = ({ coordinates, onChange }) => {
    const [lng, lat] = coordinates;

@@ -1,11 +1,15 @@
 // routes/subscription.routes.js
 const express = require('express');
-const ctrl = require('../controllers/subscription.controller');
-const auth = require('../middlewares/auth.middleware');
-const role = require('../middlewares/role.middleware');
-
 const router = express.Router();
+const subscriptionController = require('../controllers/subscription.controller');
+const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
-router.get('/', auth, role(['admin']), ctrl.listSubscriptions);
+// Super admin routes
+router.post('/assign-plan', authenticate, authorize(['super_admin']), subscriptionController.assignPlanToCompany);
+
+// Company admin routes
+router.get('/company-plan', authenticate, authorize(['company_admin']), subscriptionController.getCompanyPlanDetails);
+router.post('/change-plan', authenticate, authorize(['company_admin']), subscriptionController.changeCompanyPlan);
+router.get('/check-limits', authenticate, authorize(['company_admin']), subscriptionController.checkPlanLimitations);
 
 module.exports = router;

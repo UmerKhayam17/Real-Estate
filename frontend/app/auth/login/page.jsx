@@ -18,12 +18,12 @@ export default function LoginPage() {
   const loginMutation = useMutation({
     mutationFn: async (loginData) => {
       const res = await api.post("/auth/login", loginData);
-      console.log("the res is ",res)
+      console.log("the res is ", res)
       return res.data;
     },
     onSuccess: (data) => {
       login(data.token, data.user);
-      
+
       // Handle redirection based on user role
       if (data.user.role === "dealer") {
         if (data.dealerStatus?.status === "profile_incomplete") {
@@ -33,13 +33,17 @@ export default function LoginPage() {
         } else {
           router.push("/dealer/dashboard");
         }
-      } 
-      else if(data.user.role==="admin"){
-        router.push("/admin/dashboard")
-      } 
+      }
+      else if (data.user.role === "company_admin") {
+        router.push("/company_admin/dashboard")
+      }
+      else if (data.user.role === "super_admin") {
+        router.push("/super_admin/dashboard")
+      }
       else {
         router.push("/dashboard");
       }
+      console.log("Login successful", data.user.role);
     },
     onError: (error) => {
       alert(error.response?.data?.message || "Login failed");

@@ -1,0 +1,218 @@
+const {Plan} = require("../models");
+const { generatePlanId } = require("../utils/generatePlanIdPurchased.js");
+
+const createPlan = async (req, res, next) => {
+  try {
+  
+    const { name, description, price, limitations, validateDays } = req.body;
+
+    const planExists = await Plan.findOne({ name, deleted: false });
+    if (planExists) {
+      res.status(400);
+      throw new Error("Plan with this name already exists");
+    }
+
+    const plan = await Plan.create({
+      name,
+      description,
+      price,
+      limitations,
+      validateDays,
+      createdBy: req.user.id,
+      isActive: true,
+    });
+    console.log("the user is", req.user)
+    res.status(201).json({
+      success: true,
+      data: plan,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updatePlan = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const plan = await Plan.findOne({ _id: id, deleted: false });
+
+    if (!plan) {
+      res.status(404);
+      throw new Error("Plan not found");
+    }
+
+    const updatedPlan = await Plan.findByIdAndUpdate(
+      id,
+      { ...req.body, updatedAt: Date.now() },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: updatedPlan,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deletePlan = async (req, res, next) => {
+  try {
+    const plan = await Plan.findById(req.params.id);
+
+    if (!plan) {
+      res.status(404);
+      throw new Error("Plan not found");
+    }
+
+    await Plan.findByIdAndUpdate(
+      req.params.id,
+      { deleted: true, isActive: false, updatedAt: Date.now() },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Plan deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET ALL PLANS
+const getAllPlans = async (req, res) => {
+  try {
+    const plans = await Plan.find({
+      deleted: false,
+      isActive: true,
+    });
+
+    res.status(200).json(plans);
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "Error fetching plans", error: error.message });
+  }
+};
+
+const getPlansForRegistration = async (req, res, next) => {
+   try {
+      const plans = await Plan.find({
+         deleted: false,
+         isActive: true
+      })
+         .select('name description price currency billingCycle validateDays limitations isDefault')
+         .sort({ price: 1 });
+
+      // Format response for registration page
+      const formattedPlans = plans.map(plan => ({
+         id: plan._id,
+         name: plan.name,
+         description: plan.description,
+         price: plan.price,
+         currency: plan.currency,
+         billingCycle: plan.billingCycle,
+         validateDays: plan.validateDays,
+         isDefault: plan.isDefault,
+         limitations: {
+            maxDealers: plan.limitations.maxDealers,
+            maxProperties: plan.limitations.maxProperties,
+            features: plan.limitations.features
+         },
+         popular: plan.name.toLowerCase().includes('professional') // Mark professional as popular
+      }));
+
+      res.status(200).json({
+         plans: formattedPlans,
+         defaultPlan: formattedPlans.find(plan => plan.isDefault) || formattedPlans[0]
+      });
+   } catch (err) {
+      next(err);
+   }
+};
+
+const changePlan = async (req, res) => {
+  try {
+    const { changingPlanId, newPlanId } = req.body;
+
+    // Find current company
+    const company = await Company.findOne({
+      companyId: req.user.companyId,
+      deleted: false,
+      isActive: true,
+    });
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // Find the currently active plan
+    const currentPlan = company.plan.find(
+      (p) => p._id.toString() === changingPlanId && p.isActive === false && p.status === "not started"
+    );
+
+    if (!currentPlan) {
+      res.status(200).json({
+        success: true,
+        message: "Plan changed successfully",
+        updatedPlans: company.plan,
+      });
+    }
+
+    // Find the new plan from Plan collection
+    const newPlan = await Plan.findOne({
+      _id: newPlanId,
+      deleted: false,
+      isActive: true,
+    });
+
+    if (!newPlan) {
+      return res.status(404).json({ message: "New plan not found" });
+    }
+
+    // Only replace if they are different plans
+    if (newPlan._id.toString() !== currentPlan._id.toString()) {
+      // Remove the current plan from company's plan array
+      company.plan = company.plan.filter(
+        (p) => p._id.toString() !== currentPlan._id.toString()
+      );
+
+      // Add the new plan (copy full details)
+      company.plan.push({
+        ...newPlan.toObject(),
+        isActive: newPlan.price === 0,
+        status: "not started",
+        planId: await generatePlanId(req.user.companyId, req.user.userId),
+      });
+    }
+
+    await company.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Plan changed successfully",
+      updatedPlans: company.plan,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Error changing plan",
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports = {
+  createPlan,
+  updatePlan,
+  deletePlan,
+  getAllPlans,
+  changePlan,
+  getPlansForRegistration
+};

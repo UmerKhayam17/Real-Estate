@@ -1,6 +1,5 @@
 // backend/controllers/property.controller.js
 const Property = require('../models/Property.model');
-const Inquiry = require('../models/Inquiry.model');
 const fs = require('fs');
 const path = require('path');
 
@@ -46,10 +45,17 @@ exports.getProperties = async (req, res, next) => {
 
 
     if (req.user && req.user.role === 'dealer') {
+      // For dealers, only show their properties
       filter.agent = req.user.id;
-      // console.log(`🔒 Dealer mode: Showing properties for dealer ${req.user.id}`);
-    } else {
-      // console.log(`👤 ${req.user ? req.user.role : 'Guest'} mode: Showing all properties`);
+    } else if (req.user && req.user.role === 'company_admin') {
+      // Company admin can see all properties from dealers in their company
+      const companyDealers = await User.find({
+        companyId: req.user.companyId,
+        role: 'dealer'
+      }).select('_id');
+
+      const dealerIds = companyDealers.map(dealer => dealer._id);
+      filter.agent = { $in: dealerIds };
     }
 
     // Search and filter parameters
@@ -95,7 +101,14 @@ exports.getProperties = async (req, res, next) => {
       .skip(skip)
       .limit(limit)
       .sort(sortObj)
-      .populate('agent', 'name email phone');
+      .populate({
+        path: 'agent',
+        select: 'name email phone companyId',
+        populate: {
+          path: 'companyId',
+          select: 'name'
+        }
+      });
 
     res.json({
       total,
@@ -305,29 +318,6 @@ exports.deleteProperty = async (req, res, next) => {
 
     await property.deleteOne();
     res.json({ message: 'Property deleted successfully' });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// create inquiry (lead)
-exports.contactProperty = async (req, res, next) => {
-  try {
-    const property = await Property.findById(req.params.id);
-    if (!property) return res.status(404).json({ message: 'Property not found' });
-
-    const data = {
-      property: property._id,
-      fromUser: req.user ? req.user.id : null,
-      name: req.body.name,
-      email: req.body.email,
-      phone: req.body.phone,
-      message: req.body.message
-    };
-
-    const inquiry = await Inquiry.create(data);
-    // TODO: notify agent (email/SMS)
-    res.status(201).json(inquiry);
   } catch (err) {
     next(err);
   }

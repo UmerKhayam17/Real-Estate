@@ -1,13 +1,14 @@
 // routes/user.routes.js
 const express = require('express');
-const auth = require('../middlewares/auth.middleware');
-const role = require('../middlewares/role.middleware');
-const ctrl = require('../controllers/user.controller');
-
 const router = express.Router();
+const userController = require('../controllers/user.controller');
+const { authenticate } = require('../middlewares/auth.middleware');
 
-router.get('/me', auth, ctrl.getProfile);
-router.get('/getall', auth, role(['admin']), ctrl.getAllUsers);
-// Get all users (admin only)
+// All routes require authentication
+router.use(authenticate);
+
+router.get('/profile', userController.getProfile);
+router.put('/profile', userController.updateProfile);
+router.put('/change-password', userController.changePassword);
 
 module.exports = router;

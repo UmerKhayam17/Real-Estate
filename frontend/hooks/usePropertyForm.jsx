@@ -190,7 +190,7 @@ export const usePropertyForm = (existingProperty = null) => {
 
       if (!isAuthenticated()) {
          toast.error('Please login to continue');
-         router.push('/login');
+         router.push('/auth/login');
          return { success: false, error: 'Not authenticated' };
       }
 
@@ -198,7 +198,7 @@ export const usePropertyForm = (existingProperty = null) => {
 
       try {
          console.log('🚀 SUBMITTING PROPERTY FORM - RAW FORM DATA:', formData);
-        
+
          let cleanedFeatures = [];
          if (Array.isArray(formData.features)) {
             cleanedFeatures = formData.features;

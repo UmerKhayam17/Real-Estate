@@ -1,8 +1,8 @@
 // app/components/layout/LayoutWrapper.jsx
 "use client";
 import { useState } from 'react';
-import Navbar from '@/app/components/layout/Navbar';
-import Sidebar from '@/app/components/layout/Sidebar';
+import Navbar from '@/components/layout/Navbar';
+import Sidebar from '@/components/layout/Sidebar';
 
 export default function DealerLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -20,7 +20,7 @@ export default function DealerLayout({ children }) {
         {sidebarOpen && (
           <div className="lg:hidden fixed inset-0 z-40">
             <div
-              className="fixed inset-0 bg-neutral-950/20"
+              className="fixed inset-0 bg-neutral-950/20 backdrop-blur-lg"
               onClick={() => setSidebarOpen(false)}
             />
             <div className="fixed inset-y-0 left-0 z-50 w-64 h-full">

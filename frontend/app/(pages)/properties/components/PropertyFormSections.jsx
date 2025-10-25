@@ -6,8 +6,8 @@ import {
    MultiSelectField,
    TextAreaField,
    Checkbox
-} from '@/app/components/common/FormFields';
-import FileUpload from '@/app/components/common/FileUpload';
+} from '@/components/common/FormFields';
+import FileUpload from '@/components/common/FileUpload';
 import { getImageUrl } from '@/utils/imageUtils';
 
 // Options for dropdowns
@@ -527,7 +527,7 @@ export const FeaturesSection = ({ formData, handleArrayChange }) => {
             placeholder="Select features available"
             helperText="Choose all features that apply to this property"
          />
-        
+
       </div>
    );
 };

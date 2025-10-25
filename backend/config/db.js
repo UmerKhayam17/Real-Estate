@@ -6,7 +6,7 @@ module.exports = async () => {
   if (!uri) throw new Error('MONGODB_URI not set in .env');
   try {
     await mongoose.connect(uri, { dbName: 'realestate_db' });
-    console.log('✅ MongoDB connected');
+    // console.log('✅ MongoDB connected');
   } catch (err) {
     console.error('❌ MongoDB connection error:', err.message);
     throw err;

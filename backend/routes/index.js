@@ -5,6 +5,9 @@ const router = express.Router();
 router.use('/auth', require('./auth.routes'));
 router.use('/properties', require('./property.routes'));
 router.use('/users', require('./user.routes'));
-router.use('/subscriptions', require('./subscription.routes') || express.Router());
+router.use('/company', require('./company.routes'));
+router.use('/company-join', require('./companyJoinRequest.routes'));
+router.use('/plan', require('./plan.route'));
+router.use('/subscriptions', require('./subscription.routes'));
 
 module.exports = router;

@@ -22,7 +22,7 @@ import {
    MdVerified
 } from 'react-icons/md';
 import { getImageUrl, getPropertyImageUrl } from '@/utils/imageUtils';
-import ImageWithFallback from '@/app/components/common/ImageWithFallback';
+import ImageWithFallback from '@/components/common/ImageWithFallback';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 
